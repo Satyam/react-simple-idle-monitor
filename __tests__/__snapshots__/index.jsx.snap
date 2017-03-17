@@ -1,0 +1,33 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`IdleTimer from react-simple-idle-monitor Initial rendering with activeClassName and no children 1`] = `
+<div
+  className="active"
+/>
+`;
+
+exports[`IdleTimer from react-simple-idle-monitor Initial rendering with children and activeClassName 1`] = `
+<div
+  className="active"
+>
+  <p>
+    Hello
+  </p>
+</div>
+`;
+
+exports[`IdleTimer from react-simple-idle-monitor Initial rendering with children and no properties 1`] = `
+<p>
+  Hello
+</p>
+`;
+
+exports[`IdleTimer from react-simple-idle-monitor Initial rendering with no properties nor children 1`] = `null`;
+
+exports[`IdleTimer from react-simple-idle-monitor Rendering after timeout with idleClassName and no children 1`] = `
+<div
+  className="active"
+/>
+`;
+
+exports[`IdleTimer from react-simple-idle-monitor Rendering after timeout with no properties nor children 1`] = `null`;

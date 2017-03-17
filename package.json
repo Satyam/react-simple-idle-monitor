@@ -1,0 +1,83 @@
+{
+  "name": "react-simple-idle-monitor",
+  "version": "1.0.0",
+  "description": "Simple monitor of idle time for React",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint --ext .jsx,.js . || exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Satyam/react-simple-idle-monitor.git"
+  },
+  "keywords": [
+    "react",
+    "idle",
+    "timer",
+    "monitor",
+    "screensaver"
+  ],
+  "author": "Daniel Barreiro",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Satyam/react-simple-idle-monitor/issues"
+  },
+  "homepage": "https://github.com/Satyam/react-simple-idle-monitor#readme",
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "jsx"
+    ],
+    "coverageDirectory": "<rootDir>/coverage",
+    "coverageReporters": [
+      "html",
+      "text"
+    ]
+  },
+  "babel": {
+    "presets": [
+      "es2015",
+      "react"
+    ]
+  },
+  "eslintConfig": {
+    "extends": "airbnb",
+    "env": {
+      "node": true,
+      "jest": true,
+      "browser": true
+    },
+    "rules": {
+      "react/forbid-prop-types": [
+        2,
+        {
+          "forbid": [
+            "any",
+            "array"
+          ]
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "react": "^15.4.2"
+  },
+  "devDependencies": {
+    "babel-core": "^6.24.0",
+    "babel-jest": "^19.0.0",
+    "babel-preset-es2015": "^6.24.0",
+    "babel-preset-react": "^6.23.0",
+    "enzyme": "^2.7.1",
+    "enzyme-to-json": "^1.5.0",
+    "eslint": "^3.17.1",
+    "eslint-config-airbnb": "^14.1.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^4.0.0",
+    "eslint-plugin-react": "^6.10.0",
+    "jest": "^19.0.2",
+    "jsdom": "^9.12.0",
+    "react-addons-test-utils": "^15.4.2",
+    "react-dom": "^15.4.2"
+  }
+}
