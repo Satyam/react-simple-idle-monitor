@@ -3,7 +3,7 @@ import { shallow, mount } from 'enzyme';
 import toJson from 'enzyme-to-json';
 import { jsdom } from 'jsdom';
 
-import IdleTimer from '../';
+import IdleTimer from '../src';
 
 global.document = jsdom('');
 global.window = document.defaultView;
