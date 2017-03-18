@@ -24,10 +24,10 @@ exports[`IdleTimer from react-simple-idle-monitor Initial rendering with childre
 
 exports[`IdleTimer from react-simple-idle-monitor Initial rendering with no properties nor children 1`] = `null`;
 
-exports[`IdleTimer from react-simple-idle-monitor Rendering after timeout with idleClassName and no children 1`] = `
-<div
-  className="active"
-/>
-`;
+exports[`IdleTimer from react-simple-idle-monitor Rendering after timeout with children and idleClassName 1`] = `"<div class=\\"idle\\"><p>Hello</p></div>"`;
+
+exports[`IdleTimer from react-simple-idle-monitor Rendering after timeout with children and no properties 1`] = `"<p>Hello</p>"`;
+
+exports[`IdleTimer from react-simple-idle-monitor Rendering after timeout with idleClassName and no children 1`] = `"<div class=\\"idle\\"></div>"`;
 
 exports[`IdleTimer from react-simple-idle-monitor Rendering after timeout with no properties nor children 1`] = `null`;

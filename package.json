@@ -34,7 +34,8 @@
     "coverageReporters": [
       "html",
       "text"
-    ]
+    ],
+    "snapshotSerializers": ["enzyme-to-json/serializer"]
   },
   "babel": {
     "presets": [
