@@ -48,20 +48,30 @@ export default class IdleTimer extends Component {
       if (dispatch && reduxActionPrefix) {
         dispatch({
           type: `${reduxActionPrefix}_idle`,
-          when: Date.now(),
-          start: this.startTime,
+          now: Date.now(),
+          since: this.startTime,
         });
       }
-      if (onIdle) onIdle();
+      if (onIdle) {
+        onIdle({
+          now: Date.now(),
+          since: this.startTime,
+        });
+      }
     } else {
       if (dispatch && reduxActionPrefix) {
         dispatch({
           type: `${reduxActionPrefix}_active`,
-          when: Date.now(),
-          start: this.startTime,
+          now: Date.now(),
+          since: this.startTime,
         });
       }
-      if (onActive) onActive();
+      if (onActive) {
+        onActive({
+          now: Date.now(),
+          since: this.startTime,
+        });
+      }
     }
     if (activeClassName || idleClassName) this.forceUpdate();
   }
