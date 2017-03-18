@@ -1,12 +1,12 @@
 import React, { Component, PropTypes } from 'react';
-import bindHandlers from './utils/bindHandlers';
 
 export default class IdleTimer extends Component {
 
   constructor(props) {
     super(props);
-    bindHandlers(this);
     this.idle = false;
+    this.onToggleIdleStateHandler = this.onToggleIdleStateHandler.bind(this);
+    this.onEventHandler = this.onEventHandler.bind(this);
   }
 
   componentDidMount() {
