@@ -13,7 +13,11 @@ export default class IdleTimer extends Component {
     if (typeof document === 'undefined') return;
     const { element, events } = this.props;
     events.forEach(ev => element.addEventListener(ev, this.onEventHandler));
-    this.run();
+    if (this.props.enabled) {
+      this.run();
+    } else {
+      this.stop();
+    }
   }
   componentWillReceiveProps(nextProps) {
     if (!!nextProps.enabled !== !!this.props.enabled) {
@@ -25,7 +29,7 @@ export default class IdleTimer extends Component {
     }
   }
   componentWillUnmount() {
-    clearTimeout(this.tId);
+    this.stop();
     if (typeof document === 'undefined') return;
     const { element, events } = this.props;
     events.forEach(ev => element.removeEventListener(ev, this.onEventHandler));
@@ -130,8 +134,8 @@ export default class IdleTimer extends Component {
     if (dispatch && reduxActionPrefix) {
       dispatch({
         type: `${reduxActionPrefix}_run`,
-        when: Date.now(),
-        start: this.startTime,
+        now: Date.now(),
+        since: this.startTime,
       });
     }
   }
@@ -145,8 +149,8 @@ export default class IdleTimer extends Component {
     if (dispatch && reduxActionPrefix) {
       dispatch({
         type: `${reduxActionPrefix}_stop`,
-        when: Date.now(),
-        start: this.startTime,
+        now: Date.now(),
+        since: this.startTime,
       });
     }
   }
