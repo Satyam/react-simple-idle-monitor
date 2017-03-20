@@ -18,34 +18,38 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var IdleTimer = function (_Component) {
-  _inherits(IdleTimer, _Component);
+var IdleMonitor = function (_Component) {
+  _inherits(IdleMonitor, _Component);
 
-  function IdleTimer(props) {
-    _classCallCheck(this, IdleTimer);
+  function IdleMonitor(props) {
+    _classCallCheck(this, IdleMonitor);
 
-    var _this = _possibleConstructorReturn(this, (IdleTimer.__proto__ || Object.getPrototypeOf(IdleTimer)).call(this, props));
+    var _this = _possibleConstructorReturn(this, (IdleMonitor.__proto__ || Object.getPrototypeOf(IdleMonitor)).call(this, props));
 
     _this.idle = false;
-    _this.onToggleIdleStateHandler = _this.onToggleIdleStateHandler.bind(_this);
+    _this.onTimeoutHandler = _this.onTimeoutHandler.bind(_this);
     _this.onEventHandler = _this.onEventHandler.bind(_this);
     return _this;
   }
 
-  _createClass(IdleTimer, [{
+  _createClass(IdleMonitor, [{
     key: 'componentDidMount',
     value: function componentDidMount() {
       var _this2 = this;
 
-      if (typeof document === 'undefined') return;
       var _props = this.props,
           element = _props.element,
           events = _props.events;
 
+      if (!element) return;
       events.forEach(function (ev) {
         return element.addEventListener(ev, _this2.onEventHandler);
       });
-      this.run();
+      if (this.props.enabled) {
+        this.run();
+      } else {
+        this.stop();
+      }
     }
   }, {
     key: 'componentWillReceiveProps',
@@ -63,50 +67,67 @@ var IdleTimer = function (_Component) {
     value: function componentWillUnmount() {
       var _this3 = this;
 
-      clearTimeout(this.tId);
-      if (typeof document === 'undefined') return;
+      this.stop();
       var _props2 = this.props,
           element = _props2.element,
           events = _props2.events;
 
+      if (!element) return;
       events.forEach(function (ev) {
         return element.removeEventListener(ev, _this3.onEventHandler);
       });
     }
   }, {
-    key: 'onToggleIdleStateHandler',
-    value: function onToggleIdleStateHandler() {
-      this.idle = !this.idle;
+    key: 'onActiveHandler',
+    value: function onActiveHandler(ev) {
+      var _this4 = this;
 
       var _props3 = this.props,
-          onIdle = _props3.onIdle,
           reduxActionPrefix = _props3.reduxActionPrefix,
           onActive = _props3.onActive,
           dispatch = _props3.dispatch,
           activeClassName = _props3.activeClassName,
           idleClassName = _props3.idleClassName;
 
-      // Fire the appropriate action
 
+      var prevented = false;
       if (this.idle) {
-        if (dispatch && reduxActionPrefix) {
-          dispatch({
-            type: reduxActionPrefix + '_idle',
-            when: Date.now(),
-            start: this.startTime
-          });
+        this.idle = false;
+        if (onActive) {
+          onActive(Object.assign({
+            now: Date.now(),
+            startTime: this.startTime,
+            preventActive: function preventActive() {
+              _this4.idle = true;
+              prevented = true;
+            }
+          }, ev));
         }
-        if (onIdle) onIdle();
-      } else {
-        if (dispatch && reduxActionPrefix) {
-          dispatch({
-            type: reduxActionPrefix + '_active',
-            when: Date.now(),
-            start: this.startTime
-          });
+
+        if (!prevented) {
+          if (dispatch && reduxActionPrefix) {
+            dispatch({
+              type: reduxActionPrefix + '_active',
+              now: Date.now(),
+              startTime: this.startTime
+            });
+          }
+          if (activeClassName || idleClassName) this.forceUpdate();
         }
-        if (onActive) onActive();
       }
+    }
+  }, {
+    key: 'onTimeoutHandler',
+    value: function onTimeoutHandler() {
+      var _props4 = this.props,
+          onIdle = _props4.onIdle,
+          activeClassName = _props4.activeClassName,
+          idleClassName = _props4.idleClassName;
+
+
+      this.idle = true;
+
+      this.notify('idle', onIdle);
       if (activeClassName || idleClassName) this.forceUpdate();
     }
   }, {
@@ -114,16 +135,11 @@ var IdleTimer = function (_Component) {
     value: function onEventHandler(ev) {
       var pageX = this.pageX,
           pageY = this.pageY,
-          startTime = this.startTime,
-          tId = this.tId,
-          idle = this.idle;
-      var _props4 = this.props,
-          enabled = _props4.enabled,
-          timeout = _props4.timeout;
+          startTime = this.startTime;
 
       // If not enabled, ignore events
 
-      if (!enabled) return;
+      if (!this.props.enabled) return;
 
       // Mousemove event
       if (ev.type === 'mousemove') {
@@ -136,60 +152,65 @@ var IdleTimer = function (_Component) {
         if (Date.now() - startTime < 200) return;
       }
 
-      // clear any existing timeout
-      clearTimeout(tId);
-
-      // if the idle timer is enabled, flip
-      if (idle) this.onToggleIdleStateHandler(ev);
+      this.onActiveHandler(ev);
 
       this.pageX = ev.pageX; // update mouse coord
       this.pageY = ev.pageY;
-      this.tId = setTimeout(this.onToggleIdleStateHandler, timeout); // set a new timeout
+
+      this.startTimeout();
     }
   }, {
-    key: 'run',
-    value: function run() {
+    key: 'startTimeout',
+    value: function startTimeout() {
+      clearTimeout(this.tId);
+      this.tId = setTimeout(this.onTimeoutHandler, this.remaining || this.props.timeout);
+      this.remaining = 0;
+      this.startTime = Date.now();
+    }
+  }, {
+    key: 'notify',
+    value: function notify(reduxSuffix, event) {
       var _props5 = this.props,
-          timeout = _props5.timeout,
           reduxActionPrefix = _props5.reduxActionPrefix,
           dispatch = _props5.dispatch;
 
 
-      clearTimeout(this.tId);
+      var payload = {
+        now: Date.now(),
+        startTime: this.startTime
+      };
 
-      this.idle = false;
-      this.startTime = Date.now();
-      this.tId = setTimeout(this.onToggleIdleStateHandler, timeout);
-      if (dispatch && reduxActionPrefix) {
-        dispatch({
-          type: reduxActionPrefix + '_run',
-          when: Date.now(),
-          start: this.startTime
-        });
+      if (typeof event === 'function') {
+        event(payload);
       }
+
+      if (dispatch && reduxActionPrefix) {
+        payload.type = reduxActionPrefix + '_' + reduxSuffix;
+        dispatch(payload);
+      }
+    }
+  }, {
+    key: 'run',
+    value: function run() {
+      this.idle = false;
+      this.startTimeout();
+
+      this.notify('run', this.props.onRun);
     }
   }, {
     key: 'stop',
     value: function stop() {
-      var _props6 = this.props,
-          reduxActionPrefix = _props6.reduxActionPrefix,
-          dispatch = _props6.dispatch;
-
       clearTimeout(this.tId);
-      if (dispatch && reduxActionPrefix) {
-        dispatch({
-          type: reduxActionPrefix + '_stop',
-          when: Date.now(),
-          start: this.startTime
-        });
-      }
+      this.remaining = this.props.timeout - (Date.now() - this.startTime);
+
+      this.notify('stop', this.props.onStop);
     }
   }, {
     key: 'render',
     value: function render() {
-      var _props7 = this.props,
-          activeClassName = _props7.activeClassName,
-          idleClassName = _props7.idleClassName;
+      var _props6 = this.props,
+          activeClassName = _props6.activeClassName,
+          idleClassName = _props6.idleClassName;
 
       return activeClassName || idleClassName ? _react2.default.createElement(
         'div',
@@ -201,17 +222,19 @@ var IdleTimer = function (_Component) {
     }
   }]);
 
-  return IdleTimer;
+  return IdleMonitor;
 }(_react.Component);
 
-exports.default = IdleTimer;
+exports.default = IdleMonitor;
 
 
-IdleTimer.propTypes = {
+IdleMonitor.propTypes = {
   timeout: _react.PropTypes.number, // Activity timeout
   events: _react.PropTypes.arrayOf(_react.PropTypes.string), // Activity events to bind
   onIdle: _react.PropTypes.func, // Action to call when user becomes inactive
   onActive: _react.PropTypes.func, // Action to call when user becomes active
+  onRun: _react.PropTypes.func,
+  onStop: _react.PropTypes.func,
   element: _react.PropTypes.object, // Element ref to watch activity on
   children: _react.PropTypes.element,
   reduxActionPrefix: _react.PropTypes.string,
@@ -221,13 +244,15 @@ IdleTimer.propTypes = {
   idleClassName: _react.PropTypes.string
 };
 
-IdleTimer.defaultProps = {
+IdleMonitor.defaultProps = {
   timeout: 1000 * 60 * 20, // 20 minutes
   events: ['mousemove', 'keydown', 'wheel', 'DOMMouseScroll', 'mouseWheel', 'mousedown', 'touchstart', 'touchmove', 'MSPointerDown', 'MSPointerMove'],
   element: typeof document !== 'undefined' && document,
   children: null,
   onIdle: null,
   onActive: null,
+  onRun: null,
+  onStop: null,
   reduxActionPrefix: null,
   dispatch: null,
   enabled: true,

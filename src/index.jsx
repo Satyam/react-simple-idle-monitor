@@ -1,17 +1,17 @@
 import React, { Component, PropTypes } from 'react';
 
-export default class IdleTimer extends Component {
+export default class IdleMonitor extends Component {
 
   constructor(props) {
     super(props);
     this.idle = false;
-    this.onToggleIdleStateHandler = this.onToggleIdleStateHandler.bind(this);
+    this.onTimeoutHandler = this.onTimeoutHandler.bind(this);
     this.onEventHandler = this.onEventHandler.bind(this);
   }
 
   componentDidMount() {
-    if (typeof document === 'undefined') return;
     const { element, events } = this.props;
+    if (!element) return;
     events.forEach(ev => element.addEventListener(ev, this.onEventHandler));
     if (this.props.enabled) {
       this.run();
@@ -30,16 +30,13 @@ export default class IdleTimer extends Component {
   }
   componentWillUnmount() {
     this.stop();
-    if (typeof document === 'undefined') return;
     const { element, events } = this.props;
+    if (!element) return;
     events.forEach(ev => element.removeEventListener(ev, this.onEventHandler));
   }
 
-  onToggleIdleStateHandler() {
-    this.idle = !this.idle;
-
+  onActiveHandler(ev) {
     const {
-      onIdle,
       reduxActionPrefix,
       onActive,
       dispatch,
@@ -47,36 +44,46 @@ export default class IdleTimer extends Component {
       idleClassName,
     } = this.props;
 
-    // Fire the appropriate action
+    let prevented = false;
     if (this.idle) {
-      if (dispatch && reduxActionPrefix) {
-        dispatch({
-          type: `${reduxActionPrefix}_idle`,
-          now: Date.now(),
-          since: this.startTime,
-        });
-      }
-      if (onIdle) {
-        onIdle({
-          now: Date.now(),
-          since: this.startTime,
-        });
-      }
-    } else {
-      if (dispatch && reduxActionPrefix) {
-        dispatch({
-          type: `${reduxActionPrefix}_active`,
-          now: Date.now(),
-          since: this.startTime,
-        });
-      }
+      this.idle = false;
       if (onActive) {
-        onActive({
-          now: Date.now(),
-          since: this.startTime,
-        });
+        onActive(Object.assign(
+          {
+            now: Date.now(),
+            startTime: this.startTime,
+            preventActive: () => {
+              this.idle = true;
+              prevented = true;
+            },
+          },
+          ev,
+        ));
+      }
+
+      if (!prevented) {
+        if (dispatch && reduxActionPrefix) {
+          dispatch({
+            type: `${reduxActionPrefix}_active`,
+            now: Date.now(),
+            startTime: this.startTime,
+          });
+        }
+        if (activeClassName || idleClassName) this.forceUpdate();
       }
     }
+  }
+
+  onTimeoutHandler() {
+    const {
+      onIdle,
+      activeClassName,
+      idleClassName,
+    } = this.props;
+
+    this.idle = true;
+
+    this.notify('idle', onIdle);
     if (activeClassName || idleClassName) this.forceUpdate();
   }
 
@@ -85,17 +92,10 @@ export default class IdleTimer extends Component {
       pageX,
       pageY,
       startTime,
-      tId,
-      idle,
     } = this;
 
-    const {
-      enabled,
-      timeout,
-    } = this.props;
-
     // If not enabled, ignore events
-    if (!enabled) return;
+    if (!this.props.enabled) return;
 
     // Mousemove event
     if (ev.type === 'mousemove') {
@@ -108,51 +108,54 @@ export default class IdleTimer extends Component {
       if ((Date.now() - startTime) < 200) return;
     }
 
-    // clear any existing timeout
-    clearTimeout(tId);
-
-    // if the idle timer is enabled, flip
-    if (idle) this.onToggleIdleStateHandler(ev);
+    this.onActiveHandler(ev);
 
     this.pageX = ev.pageX; // update mouse coord
     this.pageY = ev.pageY;
-    this.tId = setTimeout(this.onToggleIdleStateHandler, timeout); // set a new timeout
+
+    this.startTimeout();
+  }
+
+  startTimeout() {
+    clearTimeout(this.tId);
+    this.tId = setTimeout(this.onTimeoutHandler, this.remaining || this.props.timeout);
+    this.remaining = 0;
+    this.startTime = Date.now();
+  }
+
+  notify(reduxSuffix, event) {
+    const {
+      reduxActionPrefix,
+      dispatch,
+    } = this.props;
+
+    const payload = {
+      now: Date.now(),
+      startTime: this.startTime,
+    };
+
+    if (typeof event === 'function') {
+      event(payload);
+    }
+
+    if (dispatch && reduxActionPrefix) {
+      payload.type = `${reduxActionPrefix}_${reduxSuffix}`;
+      dispatch(payload);
+    }
   }
 
   run() {
-    const {
-      timeout,
-      reduxActionPrefix,
-      dispatch,
-    } = this.props;
-
-    clearTimeout(this.tId);
-
     this.idle = false;
-    this.startTime = Date.now();
-    this.tId = setTimeout(this.onToggleIdleStateHandler, timeout);
-    if (dispatch && reduxActionPrefix) {
-      dispatch({
-        type: `${reduxActionPrefix}_run`,
-        now: Date.now(),
-        since: this.startTime,
-      });
-    }
+    this.startTimeout();
+
+    this.notify('run', this.props.onRun);
   }
 
   stop() {
-    const {
-      reduxActionPrefix,
-      dispatch,
-    } = this.props;
     clearTimeout(this.tId);
-    if (dispatch && reduxActionPrefix) {
-      dispatch({
-        type: `${reduxActionPrefix}_stop`,
-        now: Date.now(),
-        since: this.startTime,
-      });
-    }
+    this.remaining = this.props.timeout - (Date.now() - this.startTime);
+
+    this.notify('stop', this.props.onStop);
   }
 
   render() {
@@ -170,11 +173,13 @@ export default class IdleTimer extends Component {
 
 }
 
-IdleTimer.propTypes = {
+IdleMonitor.propTypes = {
   timeout: PropTypes.number, // Activity timeout
   events: PropTypes.arrayOf(PropTypes.string), // Activity events to bind
   onIdle: PropTypes.func, // Action to call when user becomes inactive
   onActive: PropTypes.func, // Action to call when user becomes active
+  onRun: PropTypes.func,
+  onStop: PropTypes.func,
   element: PropTypes.object, // Element ref to watch activity on
   children: PropTypes.element,
   reduxActionPrefix: PropTypes.string,
@@ -184,7 +189,7 @@ IdleTimer.propTypes = {
   idleClassName: PropTypes.string,
 };
 
-IdleTimer.defaultProps = {
+IdleMonitor.defaultProps = {
   timeout: 1000 * 60 * 20, // 20 minutes
   events: [
     'mousemove',
@@ -202,6 +207,8 @@ IdleTimer.defaultProps = {
   children: null,
   onIdle: null,
   onActive: null,
+  onRun: null,
+  onStop: null,
   reduxActionPrefix: null,
   dispatch: null,
   enabled: true,
