@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import { shallow, mount } from 'enzyme';
 import { jsdom } from 'jsdom';
 
-import IdleTimer from '../src';
+import IdleMonitor from '../src';
 
 global.document = jsdom('');
 global.window = document.defaultView;
@@ -28,22 +28,22 @@ function fireUIEvent() {
 
 jest.useFakeTimers();
 
-describe('IdleTimer from react-simple-idle-monitor', () => {
+describe('IdleMonitor from react-simple-idle-monitor', () => {
   describe('Initial rendering', () => {
     it('with no properties nor children', () => {
-      const wrapper = shallow(<IdleTimer />);
+      const wrapper = shallow(<IdleMonitor />);
       expect(wrapper).toMatchSnapshot();
     });
     it('with children and no properties', () => {
-      const wrapper = shallow(<IdleTimer><p>Hello</p></IdleTimer>);
+      const wrapper = shallow(<IdleMonitor><p>Hello</p></IdleMonitor>);
       expect(wrapper).toMatchSnapshot();
     });
     it('with activeClassName and no children', () => {
-      const wrapper = shallow(<IdleTimer activeClassName="active" />);
+      const wrapper = shallow(<IdleMonitor activeClassName="active" />);
       expect(wrapper).toMatchSnapshot();
     });
     it('with children and activeClassName', () => {
-      const wrapper = shallow(<IdleTimer activeClassName="active"><p>Hello</p></IdleTimer>);
+      const wrapper = shallow(<IdleMonitor activeClassName="active"><p>Hello</p></IdleMonitor>);
       expect(wrapper).toMatchSnapshot();
     });
   });
@@ -53,18 +53,18 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
      * https://github.com/adriantoine/enzyme-to-json/issues/47
      */
     it('with no properties nor children', () => {
-      const wrapper = mount(<IdleTimer />);
+      const wrapper = mount(<IdleMonitor />);
       jest.runAllTimers();
       expect(wrapper.html()).toMatchSnapshot();
     });
     it('with children and no properties', () => {
-      const wrapper = mount(<IdleTimer><p>Hello</p></IdleTimer>);
+      const wrapper = mount(<IdleMonitor><p>Hello</p></IdleMonitor>);
       jest.runAllTimers();
       expect(wrapper.html()).toMatchSnapshot();
     });
     it('with idleClassName and no children', () => {
       const wrapper = mount(
-        <IdleTimer
+        <IdleMonitor
           activeClassName="active"
           idleClassName="idle"
         />,
@@ -74,10 +74,10 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
     });
     it('with children and idleClassName', () => {
       const wrapper = mount(
-        <IdleTimer
+        <IdleMonitor
           activeClassName="active"
           idleClassName="idle"
-        ><p>Hello</p></IdleTimer>,
+        ><p>Hello</p></IdleMonitor>,
       );
       jest.runAllTimers();
       expect(wrapper.html()).toMatchSnapshot();
@@ -89,7 +89,7 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
       const onActive = jest.fn();
       mount(
         <div>
-          <IdleTimer onIdle={onIdle} onActive={onActive} />
+          <IdleMonitor onIdle={onIdle} onActive={onActive} />
         </div>,
       );
       expect(onIdle).not.toHaveBeenCalled();
@@ -100,17 +100,17 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
       const onActive = jest.fn();
       mount(
         <div>
-          <IdleTimer onIdle={onIdle} onActive={onActive} />
+          <IdleMonitor onIdle={onIdle} onActive={onActive} />
         </div>,
       );
 
       jest.runAllTimers();
       expect(onIdle).toHaveBeenCalledWith(expect.objectContaining({
         now: expect.any(Number),
-        since: expect.any(Number),
+        startTime: expect.any(Number),
       }));
       expect(Date.now() - onIdle.mock.calls[0][0].now).toBeLessThan(100);
-      expect(Date.now() - onIdle.mock.calls[0][0].since).toBeLessThan(100);
+      expect(Date.now() - onIdle.mock.calls[0][0].startTime).toBeLessThan(100);
       expect(onActive).not.toHaveBeenCalled();
     });
     it('should fire onActive after UI event', () => {
@@ -118,7 +118,7 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
       const onActive = jest.fn();
       mount(
         <div>
-          <IdleTimer onIdle={onIdle} onActive={onActive} />
+          <IdleMonitor onIdle={onIdle} onActive={onActive} />
         </div>,
       );
       jest.runAllTimers();
@@ -129,17 +129,17 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
       expect(onIdle).not.toHaveBeenCalled();
       expect(onActive).toHaveBeenCalledWith(expect.objectContaining({
         now: expect.any(Number),
-        since: expect.any(Number),
+        startTime: expect.any(Number),
       }));
       expect(Date.now() - onActive.mock.calls[0][0].now).toBeLessThan(100);
-      expect(Date.now() - onActive.mock.calls[0][0].since).toBeLessThan(100);
+      expect(Date.now() - onActive.mock.calls[0][0].startTime).toBeLessThan(100);
     });
     it('should not fire onActive after UI event if not idle first', () => {
       const onIdle = jest.fn();
       const onActive = jest.fn();
       mount(
         <div>
-          <IdleTimer onIdle={onIdle} onActive={onActive} />
+          <IdleMonitor onIdle={onIdle} onActive={onActive} />
         </div>,
       );
 
@@ -154,23 +154,23 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
       const dispatch = jest.fn();
       mount(
         <div>
-          <IdleTimer dispatch={dispatch} reduxActionPrefix="redux_action" />
+          <IdleMonitor dispatch={dispatch} reduxActionPrefix="redux_action" />
         </div>,
       );
       expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({
         type: expect.any(String),
         now: expect.any(Number),
-        since: expect.any(Number),
+        startTime: expect.any(Number),
       }));
       expect(dispatch.mock.calls[0][0].type).toBe('redux_action_run');
       expect(Date.now() - dispatch.mock.calls[0][0].now).toBeLessThan(100);
-      expect(Date.now() - dispatch.mock.calls[0][0].since).toBeLessThan(100);
+      expect(Date.now() - dispatch.mock.calls[0][0].startTime).toBeLessThan(100);
     });
     it('`_idle` action should be dispatched after timeout', () => {
       const dispatch = jest.fn();
       mount(
         <div>
-          <IdleTimer dispatch={dispatch} reduxActionPrefix="redux_action" />
+          <IdleMonitor dispatch={dispatch} reduxActionPrefix="redux_action" />
         </div>,
       );
       dispatch.mockClear();
@@ -178,17 +178,17 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
       expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({
         type: expect.any(String),
         now: expect.any(Number),
-        since: expect.any(Number),
+        startTime: expect.any(Number),
       }));
       expect(dispatch.mock.calls[0][0].type).toBe('redux_action_idle');
       expect(Date.now() - dispatch.mock.calls[0][0].now).toBeLessThan(100);
-      expect(Date.now() - dispatch.mock.calls[0][0].since).toBeLessThan(100);
+      expect(Date.now() - dispatch.mock.calls[0][0].startTime).toBeLessThan(100);
     });
     it('`_active` action should be dispatched after UI event', () => {
       const dispatch = jest.fn();
       mount(
         <div>
-          <IdleTimer dispatch={dispatch} reduxActionPrefix="redux_action" />
+          <IdleMonitor dispatch={dispatch} reduxActionPrefix="redux_action" />
         </div>,
       );
       jest.runAllTimers();
@@ -199,17 +199,17 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
       expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({
         type: expect.any(String),
         now: expect.any(Number),
-        since: expect.any(Number),
+        startTime: expect.any(Number),
       }));
       expect(dispatch.mock.calls[0][0].type).toBe('redux_action_active');
       expect(Date.now() - dispatch.mock.calls[0][0].now).toBeLessThan(100);
-      expect(Date.now() - dispatch.mock.calls[0][0].since).toBeLessThan(100);
+      expect(Date.now() - dispatch.mock.calls[0][0].startTime).toBeLessThan(100);
     });
     it('it should not dispatch anything after UI event if not idle first', () => {
       const dispatch = jest.fn();
       mount(
         <div>
-          <IdleTimer dispatch={dispatch} reduxActionPrefix="redux_action" />
+          <IdleMonitor dispatch={dispatch} reduxActionPrefix="redux_action" />
         </div>,
       );
       dispatch.mockClear();
@@ -237,7 +237,7 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
           return (
             this.done
             ? (<p>Hello</p>)
-            : (<IdleTimer dispatch={dispatch} reduxActionPrefix="redux_action" />)
+            : (<IdleMonitor dispatch={dispatch} reduxActionPrefix="redux_action" />)
           );
         }
       };
@@ -250,11 +250,11 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
       expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({
         type: expect.any(String),
         now: expect.any(Number),
-        since: expect.any(Number),
+        startTime: expect.any(Number),
       }));
       expect(dispatch.mock.calls[0][0].type).toBe('redux_action_stop');
       expect(Date.now() - dispatch.mock.calls[0][0].now).toBeLessThan(100);
-      expect(Date.now() - dispatch.mock.calls[0][0].since).toBeLessThan(100);
+      expect(Date.now() - dispatch.mock.calls[0][0].startTime).toBeLessThan(100);
     });
     it('`_stop` action should be called when disabled', () => {
       const dispatch = jest.fn();
@@ -273,7 +273,7 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
 
         render() {
           return (
-            <IdleTimer
+            <IdleMonitor
               dispatch={dispatch}
               reduxActionPrefix="redux_action"
               enabled={this.enabled}
@@ -287,11 +287,11 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
       expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({
         type: expect.any(String),
         now: expect.any(Number),
-        since: expect.any(Number),
+        startTime: expect.any(Number),
       }));
       expect(dispatch.mock.calls[0][0].type).toBe('redux_action_stop');
       expect(Date.now() - dispatch.mock.calls[0][0].now).toBeLessThan(100);
-      expect(Date.now() - dispatch.mock.calls[0][0].since).toBeLessThan(100);
+      expect(Date.now() - dispatch.mock.calls[0][0].startTime).toBeLessThan(100);
 
       // Nothing else should be dispatched while disabled
       dispatch.mockClear();
@@ -317,7 +317,7 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
 
         render() {
           return (
-            <IdleTimer
+            <IdleMonitor
               dispatch={dispatch}
               reduxActionPrefix="redux_action"
               enabled={this.enabled}
@@ -332,7 +332,7 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
       }));
       expect(dispatch.mock.calls[0][0].type).toBe('redux_action_stop');
       expect(Date.now() - dispatch.mock.calls[0][0].now).toBeLessThan(100);
-      expect(dispatch.mock.calls[0][0].since).toBeUndefined();
+      expect(dispatch.mock.calls[0][0].startTime).toBeUndefined();
 
       dispatch.mockClear();
       jest.runTimersToTime(20000);
@@ -340,11 +340,11 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
       expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({
         type: expect.any(String),
         now: expect.any(Number),
-        since: expect.any(Number),
+        startTime: expect.any(Number),
       }));
       expect(dispatch.mock.calls[0][0].type).toBe('redux_action_run');
       expect(Date.now() - dispatch.mock.calls[0][0].now).toBeLessThan(100);
-      expect(Date.now() - dispatch.mock.calls[0][0].since).toBeLessThan(100);
+      expect(Date.now() - dispatch.mock.calls[0][0].startTime).toBeLessThan(100);
 
       // It should resume normal operation
       dispatch.mockClear();
@@ -352,11 +352,11 @@ describe('IdleTimer from react-simple-idle-monitor', () => {
       expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({
         type: expect.any(String),
         now: expect.any(Number),
-        since: expect.any(Number),
+        startTime: expect.any(Number),
       }));
       expect(dispatch.mock.calls[0][0].type).toBe('redux_action_idle');
       expect(Date.now() - dispatch.mock.calls[0][0].now).toBeLessThan(100);
-      expect(Date.now() - dispatch.mock.calls[0][0].since).toBeLessThan(100);
+      expect(Date.now() - dispatch.mock.calls[0][0].startTime).toBeLessThan(100);
     });
   });
 });
