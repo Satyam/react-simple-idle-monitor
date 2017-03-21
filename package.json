@@ -35,7 +35,9 @@
       "html",
       "text"
     ],
-    "snapshotSerializers": ["enzyme-to-json/serializer"]
+    "snapshotSerializers": [
+      "enzyme-to-json/serializer"
+    ]
   },
   "babel": {
     "presets": [
@@ -72,13 +74,12 @@
     "babel-preset-react": "^6.23.0",
     "enzyme": "^2.7.1",
     "enzyme-to-json": "^1.5.0",
-    "eslint": "^3.17.1",
+    "eslint": "^3.18.0",
     "eslint-config-airbnb": "^14.1.0",
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^4.0.0",
-    "eslint-plugin-react": "^6.10.0",
+    "eslint-plugin-react": "^6.10.3",
     "jest": "^19.0.2",
-    "jsdom": "^9.12.0",
     "react-addons-test-utils": "^15.4.2",
     "react-dom": "^15.4.2"
   }
