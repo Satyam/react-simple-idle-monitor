@@ -51,7 +51,7 @@ When it has either or both of the `activeClassName` or `idleClassName` propertie
 
 ### Redux actions
 
-When using Redux via `react-redux`, `IdleMonitor` can dispatch various actions to be handled as needed. `IdleMonitor` only needs to have the `reduxActionPrefix` property set and to receive the `dispatch` function amongst its properties.  This can easily be done by using `react-redux` `connect` HoC to wrap it:
+When using Redux via `react-redux`, `IdleMonitor` can dispatch various actions to be handled as needed. `IdleMonitor` only needs to have the `reduxActionPrefix` property set and to receive the `dispatch` function amongst its properties.  This can easily be done by using `react-redux` [`connect`](https://github.com/reactjs/react-redux/blob/master/docs/api.md#connectmapstatetoprops-mapdispatchtoprops-mergeprops-options) HoC to wrap it:
 
 ```js
 import React from 'react';
@@ -128,9 +128,9 @@ render(
 );
 ```
 
-The code above uses the second argument of `react-redux` `connect` method to add the `onXxxx` event handler functions to the properties of `IdleMonitor` which will dispatch actions associated to each event.  It assumes the corresponding action creators are available to import from elsewhere. This would mostly mimic the effect of using the `reduxActionPrefix` property, however, it would also give a higher degree of control.  Obviously, the event handlers can point to any suitable function.
+The code above uses the second argument of [`react-redux` `connect` method](https://github.com/reactjs/react-redux/blob/master/docs/api.md#connectmapstatetoprops-mapdispatchtoprops-mergeprops-options) to add the `onXxxx` event handler functions to the properties of `IdleMonitor` which will dispatch actions associated to each event.  It assumes the corresponding action creators are available to import from elsewhere. This would mostly mimic the effect of using the `reduxActionPrefix` property, however, it would also give a higher degree of control.  Obviously, the event handlers can point to any suitable function.
 
-If `mapDispatchToProps` is set as shown above, `connect` will not supply a `dispatch` property when `mapDispatchToProps` is given thus, even if the `reduxActionPrefix` is set, other Redux actions as [shown above](#Redux_actions) will not be dispatched because of the lack of a `dispatch` property.
+If `mapDispatchToProps` is set as shown above, `connect` will not supply a `dispatch` property when `mapDispatchToProps` is given thus, even if the `reduxActionPrefix` is set, other Redux actions as [shown above](#redux-actions) will not be dispatched because of the lack of a `dispatch` property.
 
 In addition to `startTime` and `now`, the `onActive` event handler will receive two additional properties:
 
@@ -166,7 +166,7 @@ The following properties are available. If default values are not mentioned they
 * `timeout`: (in milliseconds, defaults to 20 minutes), the delay without activity that will make it switch to an idle state and fire/dispatch the corresponding actions. Changing this value after initialization will re-start the timer with the new value.
 * `events`: (array of strings, [defaults](https://github.com/Satyam/react-simple-idle-monitor/blob/master/src/index.jsx#L198)): list of DOM events (not React synthetic events) it should listen to in order to detect user activity. If this property is changed over the lifetime of the component, such changes will be ignored.
 * `element`: (actual DOM element, defaults to `document`): the DOM element to attach the above event listeners to. In a browser environment, it defaults to `document`.  In a server environment (for *universal* or *isomorphic* applications), it will be `undefined` which will disable the component, if an `activeClassName` is provided, it will always render as *active*. This property should not be changed over the lifetime of the component.
-* `onIdle`, `onActive`, `onRun`, `onStop` (functions): Event handlers, see [above](#Events).
+* `onIdle`, `onActive`, `onRun`, `onStop` (functions): Event handlers, see [above](#events).
 * `reduxActionPrefix` (string): the prefix to be used on the action types for all actions dispatched.  The suffixes `_run`, `_idle`, `_active` or `_stop` will be appended for each type.  The `dispatch` property also has to be set.
 * `dispatch` (function): a reference to Redux's store `dispatch` function, usually provided by the `connect` High-order Component from `react-redux`.
 * `enabled` (boolean, defaults to `true`): If set to `false` monitoring  will be suspended and, if set, the `onStop` event fired and/or the *prefix*`_onStop` action dispatched. When re-enabled, monitoring will resume for whatever time remained when it was disabled and the *run* event/action fired/dispatched.
