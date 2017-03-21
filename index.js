@@ -61,25 +61,29 @@ var IdleMonitor = function (_Component) {
           this.stop();
         }
       }
+      if (nextProps.timeout !== this.props.timeout) {
+        this.remaining = nextProps.timeout;
+        this.startTimeout();
+      }
     }
   }, {
     key: 'componentWillUnmount',
     value: function componentWillUnmount() {
       var _this3 = this;
 
-      this.stop();
       var _props2 = this.props,
           element = _props2.element,
           events = _props2.events;
 
       if (!element) return;
+      this.stop();
       events.forEach(function (ev) {
         return element.removeEventListener(ev, _this3.onEventHandler);
       });
     }
   }, {
     key: 'onActiveHandler',
-    value: function onActiveHandler(ev) {
+    value: function onActiveHandler(event) {
       var _this4 = this;
 
       var _props3 = this.props,
@@ -94,14 +98,15 @@ var IdleMonitor = function (_Component) {
       if (this.idle) {
         this.idle = false;
         if (onActive) {
-          onActive(Object.assign({
+          onActive({
             now: Date.now(),
             startTime: this.startTime,
             preventActive: function preventActive() {
               _this4.idle = true;
               prevented = true;
-            }
-          }, ev));
+            },
+            event: event
+          });
         }
 
         if (!prevented) {
