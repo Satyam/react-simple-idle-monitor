@@ -27,15 +27,19 @@ export default class IdleMonitor extends Component {
         this.stop();
       }
     }
+    if (nextProps.timeout !== this.props.timeout) {
+      this.remaining = nextProps.timeout;
+      this.startTimeout();
+    }
   }
   componentWillUnmount() {
-    this.stop();
     const { element, events } = this.props;
     if (!element) return;
+    this.stop();
     events.forEach(ev => element.removeEventListener(ev, this.onEventHandler));
   }
 
-  onActiveHandler(ev) {
+  onActiveHandler(event) {
     const {
       reduxActionPrefix,
       onActive,
@@ -48,7 +52,7 @@ export default class IdleMonitor extends Component {
     if (this.idle) {
       this.idle = false;
       if (onActive) {
-        onActive(Object.assign(
+        onActive(
           {
             now: Date.now(),
             startTime: this.startTime,
@@ -56,9 +60,9 @@ export default class IdleMonitor extends Component {
               this.idle = true;
               prevented = true;
             },
+            event,
           },
-          ev,
-        ));
+        );
       }
 
       if (!prevented) {
