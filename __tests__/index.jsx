@@ -1,21 +1,8 @@
 /* eslint-disable react/no-multi-comp */
 import React, { Component } from 'react';
 import { shallow, mount } from 'enzyme';
-import { jsdom } from 'jsdom';
 
 import IdleMonitor from '../src';
-
-global.document = jsdom('');
-global.window = document.defaultView;
-Object.keys(document.defaultView).forEach((property) => {
-  if (typeof global[property] === 'undefined') {
-    global[property] = document.defaultView[property];
-  }
-});
-
-global.navigator = {
-  userAgent: 'node.js',
-};
 
 // Since the monitor checks for events in document,
 // enzyme's simulate doesn't work,
@@ -127,10 +114,14 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
       fireUIEvent();
 
       expect(onIdle).not.toHaveBeenCalled();
-      expect(onActive).toHaveBeenCalledWith(expect.objectContaining({
-        now: expect.any(Number),
-        startTime: expect.any(Number),
-      }));
+      expect(onActive).toHaveBeenCalledWith(
+        expect.objectContaining({
+          now: expect.any(Number),
+          startTime: expect.any(Number),
+          preventActive: expect.any(Function),
+          event: expect.any(Object),
+        }),
+      );
       expect(Date.now() - onActive.mock.calls[0][0].now).toBeLessThan(100);
       expect(Date.now() - onActive.mock.calls[0][0].startTime).toBeLessThan(100);
     });
@@ -357,6 +348,63 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
       expect(dispatch.mock.calls[0][0].type).toBe('redux_action_idle');
       expect(Date.now() - dispatch.mock.calls[0][0].now).toBeLessThan(100);
       expect(Date.now() - dispatch.mock.calls[0][0].startTime).toBeLessThan(100);
+    });
+  });
+  describe('server-side rendering (no document)', () => {
+    it('no change of state after timeout', () => {
+      const onRun = jest.fn();
+      const onStop = jest.fn();
+      const onIdle = jest.fn();
+      const onActive = jest.fn();
+      const dispatch = jest.fn();
+      const wrapper = mount(
+        <IdleMonitor
+          element={null}
+          activeClassName="active"
+          idleClassName="idle"
+          onIdle={onIdle}
+          onActive={onActive}
+          onRun={onRun}
+          onStop={onStop}
+          dispatch={dispatch}
+          reduxActionPrefix="redux_action"
+        ><p>Hello</p></IdleMonitor>,
+      );
+      jest.runAllTimers();
+      expect(wrapper.html()).toMatchSnapshot();
+      expect(onIdle).not.toHaveBeenCalled();
+      expect(onActive).not.toHaveBeenCalled();
+      expect(onRun).not.toHaveBeenCalled();
+      expect(onStop).not.toHaveBeenCalled();
+      expect(dispatch).not.toHaveBeenCalled();
+    });
+    it('no change of state after UI event when idle', () => {
+      const onRun = jest.fn();
+      const onStop = jest.fn();
+      const onIdle = jest.fn();
+      const onActive = jest.fn();
+      const dispatch = jest.fn();
+      mount(
+        <IdleMonitor
+          element={null}
+          onIdle={onIdle}
+          onActive={onActive}
+          onRun={onRun}
+          onStop={onStop}
+          dispatch={dispatch}
+          reduxActionPrefix="redux_action"
+        />,
+      );
+      jest.runAllTimers();
+      // Don't event bother clearing the mocks since
+      // they should not have been called anyway
+      fireUIEvent();
+
+      expect(onIdle).not.toHaveBeenCalled();
+      expect(onActive).not.toHaveBeenCalled();
+      expect(onRun).not.toHaveBeenCalled();
+      expect(onStop).not.toHaveBeenCalled();
+      expect(dispatch).not.toHaveBeenCalled();
     });
   });
 });
