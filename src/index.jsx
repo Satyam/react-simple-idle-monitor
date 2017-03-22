@@ -1,3 +1,14 @@
+/**
+ * React Simple Idle Monitor
+ *
+ * @author Daniel Barreiro
+ *
+ * Portions taken from:
+ * https://github.com/SupremeTechnopriest/react-idle-timer/blob/master/src/index.js
+ * By  Randy Lebeau
+ *
+ *
+ */
 import React, { Component, PropTypes } from 'react';
 
 export default class IdleMonitor extends Component {
