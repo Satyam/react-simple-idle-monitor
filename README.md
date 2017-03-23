@@ -2,6 +2,8 @@
 
 > Simple monitor of idle time for React
 
+[![Build Status](https://travis-ci.org/Satyam/react-simple-idle-monitor.svg?branch=master)](https://travis-ci.org/Satyam/react-simple-idle-monitor)
+
 Changes state to **idle** when a certain `timeout` is reached.  Changes back to **active** when user interaction is detected.
 Optionally triggers various possible actions when the idle state changes.
 
