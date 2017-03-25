@@ -1,3 +1,5 @@
 __tests__
 src
 coverage
+.eslintignore
+.travis.yml
