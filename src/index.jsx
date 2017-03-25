@@ -189,13 +189,13 @@ export default class IdleMonitor extends Component {
 }
 
 IdleMonitor.propTypes = {
-  timeout: PropTypes.number, // Activity timeout
-  events: PropTypes.arrayOf(PropTypes.string), // Activity events to bind
-  onIdle: PropTypes.func, // Action to call when user becomes inactive
-  onActive: PropTypes.func, // Action to call when user becomes active
+  timeout: PropTypes.number,
+  events: PropTypes.arrayOf(PropTypes.string),
+  onIdle: PropTypes.func,
+  onActive: PropTypes.func,
   onRun: PropTypes.func,
   onStop: PropTypes.func,
-  element: PropTypes.object, // Element ref to watch activity on
+  element: PropTypes.any,
   children: PropTypes.element,
   reduxActionPrefix: PropTypes.string,
   dispatch: PropTypes.func,
