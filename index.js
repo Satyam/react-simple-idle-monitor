@@ -16,7 +16,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; } /**
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                * React Simple Idle Monitor
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                *
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                * @author Daniel Barreiro
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                *
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                * Portions taken from:
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                * https://github.com/SupremeTechnopriest/react-idle-timer/blob/master/src/index.js
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                * By  Randy Lebeau
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                *
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                *
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                */
+
 
 var IdleMonitor = function (_Component) {
   _inherits(IdleMonitor, _Component);
@@ -54,6 +65,7 @@ var IdleMonitor = function (_Component) {
   }, {
     key: 'componentWillReceiveProps',
     value: function componentWillReceiveProps(nextProps) {
+      /* istanbul ignore else */
       if (!!nextProps.enabled !== !!this.props.enabled) {
         if (nextProps.enabled) {
           this.run();
@@ -74,6 +86,10 @@ var IdleMonitor = function (_Component) {
       var _props2 = this.props,
           element = _props2.element,
           events = _props2.events;
+      /* The only time there is no element is when doing server-side rendering,
+       * and in such a case, there can be no unmounting
+      */
+      /* istanbul ignore if */
 
       if (!element) return;
       this.stop();
@@ -146,7 +162,13 @@ var IdleMonitor = function (_Component) {
 
       if (!this.props.enabled) return;
 
+      /*
+        The following is taken verbatim from
+        https://github.com/SupremeTechnopriest/react-idle-timer/blob/master/src/index.js
+        It seems to make sense, but I was unable to figure out a unit test for it
+      */
       // Mousemove event
+      /* istanbul ignore if */
       if (ev.type === 'mousemove') {
         // if coord are same, it didn't move
         if (ev.pageX === pageX && ev.pageY === pageY) return;
@@ -234,13 +256,13 @@ exports.default = IdleMonitor;
 
 
 IdleMonitor.propTypes = {
-  timeout: _react.PropTypes.number, // Activity timeout
-  events: _react.PropTypes.arrayOf(_react.PropTypes.string), // Activity events to bind
-  onIdle: _react.PropTypes.func, // Action to call when user becomes inactive
-  onActive: _react.PropTypes.func, // Action to call when user becomes active
+  timeout: _react.PropTypes.number,
+  events: _react.PropTypes.arrayOf(_react.PropTypes.string),
+  onIdle: _react.PropTypes.func,
+  onActive: _react.PropTypes.func,
   onRun: _react.PropTypes.func,
   onStop: _react.PropTypes.func,
-  element: _react.PropTypes.object, // Element ref to watch activity on
+  element: _react.PropTypes.any,
   children: _react.PropTypes.element,
   reduxActionPrefix: _react.PropTypes.string,
   dispatch: _react.PropTypes.func,
