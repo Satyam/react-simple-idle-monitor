@@ -6,7 +6,10 @@
   "scripts": {
     "test": "jest",
     "lint": "eslint --ext .jsx,.js . || exit 0",
-    "build": "babel src/index.jsx --out-file index.js"
+    "build": "babel src/index.jsx --out-file index.js",
+    "preversion": "npm test && eslint --ext .jsx,.js .",
+    "version": "npm run build && git add index.js",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
