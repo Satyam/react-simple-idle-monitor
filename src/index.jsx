@@ -31,6 +31,7 @@ export default class IdleMonitor extends Component {
     }
   }
   componentWillReceiveProps(nextProps) {
+    /* istanbul ignore else */
     if (!!nextProps.enabled !== !!this.props.enabled) {
       if (nextProps.enabled) {
         this.run();
@@ -45,6 +46,10 @@ export default class IdleMonitor extends Component {
   }
   componentWillUnmount() {
     const { element, events } = this.props;
+    /* The only time there is no element is when doing server-side rendering,
+     * and in such a case, there can be no unmounting
+    */
+    /* istanbul ignore if */
     if (!element) return;
     this.stop();
     events.forEach(ev => element.removeEventListener(ev, this.onEventHandler));
@@ -112,7 +117,13 @@ export default class IdleMonitor extends Component {
     // If not enabled, ignore events
     if (!this.props.enabled) return;
 
+    /*
+      The following is taken verbatim from
+      https://github.com/SupremeTechnopriest/react-idle-timer/blob/master/src/index.js
+      It seems to make sense, but I was unable to figure out a unit test for it
+    */
     // Mousemove event
+    /* istanbul ignore if */
     if (ev.type === 'mousemove') {
       // if coord are same, it didn't move
       if (ev.pageX === pageX && ev.pageY === pageY) return;
