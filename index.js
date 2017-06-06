@@ -10,6 +10,10 @@ var _react = require('react');
 
 var _react2 = _interopRequireDefault(_react);
 
+var _propTypes = require('prop-types');
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -256,19 +260,19 @@ exports.default = IdleMonitor;
 
 
 IdleMonitor.propTypes = {
-  timeout: _react.PropTypes.number,
-  events: _react.PropTypes.arrayOf(_react.PropTypes.string),
-  onIdle: _react.PropTypes.func,
-  onActive: _react.PropTypes.func,
-  onRun: _react.PropTypes.func,
-  onStop: _react.PropTypes.func,
-  element: _react.PropTypes.any,
-  children: _react.PropTypes.element,
-  reduxActionPrefix: _react.PropTypes.string,
-  dispatch: _react.PropTypes.func,
-  enabled: _react.PropTypes.bool,
-  activeClassName: _react.PropTypes.string,
-  idleClassName: _react.PropTypes.string
+  timeout: _propTypes2.default.number,
+  events: _propTypes2.default.arrayOf(_propTypes2.default.string),
+  onIdle: _propTypes2.default.func,
+  onActive: _propTypes2.default.func,
+  onRun: _propTypes2.default.func,
+  onStop: _propTypes2.default.func,
+  element: _propTypes2.default.any,
+  children: _propTypes2.default.element,
+  reduxActionPrefix: _propTypes2.default.string,
+  dispatch: _propTypes2.default.func,
+  enabled: _propTypes2.default.bool,
+  activeClassName: _propTypes2.default.string,
+  idleClassName: _propTypes2.default.string
 };
 
 IdleMonitor.defaultProps = {
