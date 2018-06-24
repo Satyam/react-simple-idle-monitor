@@ -1,8 +1,10 @@
 /* eslint-disable react/no-multi-comp */
 import React, { Component } from 'react';
 import { renderToString, renderToStaticMarkup } from 'react-dom/server';
-import { shallow, mount } from 'enzyme';
+import { shallow, mount, configure } from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
 
+configure({ adapter: new Adapter() });
 import IdleMonitor from '../src';
 
 // Since the monitor checks for events in document,
@@ -201,7 +203,9 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
       jest.runTimersToTime(10000);
       expect(wrapper.find('div.active')).toHaveLength(1);
       expect(wrapper.find('div.idle')).toHaveLength(0);
+      console.log(wrapper.debug())
       jest.runAllTimers();
+      console.log(wrapper.debug())
       expect(wrapper.find('div.active')).toHaveLength(0);
       expect(wrapper.find('div.idle')).toHaveLength(1);
     });

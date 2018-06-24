@@ -22,7 +22,7 @@ exports[`IdleMonitor from react-simple-idle-monitor Initial rendering with child
 </p>
 `;
 
-exports[`IdleMonitor from react-simple-idle-monitor Initial rendering with no properties nor children 1`] = `null`;
+exports[`IdleMonitor from react-simple-idle-monitor Initial rendering with no properties nor children 1`] = `""`;
 
 exports[`IdleMonitor from react-simple-idle-monitor Rendering after timeout with children and idleClassName 1`] = `"<div class=\\"idle\\"><p>Hello</p></div>"`;
 
@@ -36,4 +36,4 @@ exports[`IdleMonitor from react-simple-idle-monitor server-side rendering (no do
 
 exports[`IdleMonitor from react-simple-idle-monitor using reactDOM/server Using renderToStaticMarkup with no DOM 1`] = `"<div class=\\"active\\"><p>Hello</p></div>"`;
 
-exports[`IdleMonitor from react-simple-idle-monitor using reactDOM/server Using renderToString with no DOM 1`] = `"<div class=\\"active\\" data-reactroot=\\"\\" data-reactid=\\"1\\" data-react-checksum=\\"1987255802\\"><p data-reactid=\\"2\\">Hello</p></div>"`;
+exports[`IdleMonitor from react-simple-idle-monitor using reactDOM/server Using renderToString with no DOM 1`] = `"<div class=\\"active\\" data-reactroot=\\"\\"><p>Hello</p></div>"`;
