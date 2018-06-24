@@ -13,7 +13,6 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
 export default class IdleMonitor extends Component {
-
   constructor(props) {
     super(props);
     this.idle = false;
@@ -27,6 +26,7 @@ export default class IdleMonitor extends Component {
 
   componentDidMount() {
     const { element, events, enabled } = this.props;
+
     if (!element) return;
     events.forEach(ev => element.addEventListener(ev, this.onEventHandler));
     if (enabled) {
@@ -35,9 +35,11 @@ export default class IdleMonitor extends Component {
       this.stop();
     }
   }
+
   componentWillReceiveProps(nextProps) {
     const { enabled: nextEnabled, timeout: nextTimeout } = nextProps;
     const { enabled, timeout } = this.props;
+
     /* istanbul ignore else */
     if (!!nextEnabled !== !!enabled) {
       if (nextEnabled) {
@@ -51,8 +53,10 @@ export default class IdleMonitor extends Component {
       this.startTimeout();
     }
   }
+
   componentWillUnmount() {
     const { element, events } = this.props;
+
     /* The only time there is no element is when doing server-side rendering,
      * and in such a case, there can be no unmounting
     */
@@ -75,17 +79,15 @@ export default class IdleMonitor extends Component {
     if (this.idle) {
       this.idle = false;
       if (onActive) {
-        onActive(
-          {
-            now: Date.now(),
-            startTime: this.startTime,
-            preventActive: () => {
-              this.idle = true;
-              prevented = true;
-            },
-            event,
+        onActive({
+          now: Date.now(),
+          startTime: this.startTime,
+          preventActive: () => {
+            this.idle = true;
+            prevented = true;
           },
-        );
+          event,
+        });
       }
 
       if (!prevented) {
@@ -102,10 +104,7 @@ export default class IdleMonitor extends Component {
   }
 
   onTimeoutHandler() {
-    const {
-      onIdle,
-      idleClassName,
-    } = this.props;
+    const { onIdle, idleClassName } = this.props;
     const { hasClassName } = this.state;
 
     this.idle = true;
@@ -115,11 +114,7 @@ export default class IdleMonitor extends Component {
   }
 
   onEventHandler(ev) {
-    const {
-      pageX,
-      pageY,
-      startTime,
-    } = this;
+    const { pageX, pageY, startTime } = this;
     const { enabled } = this.props;
 
     // If not enabled, ignore events
@@ -136,10 +131,12 @@ export default class IdleMonitor extends Component {
       // if coord are same, it didn't move
       if (ev.pageX === pageX && ev.pageY === pageY) return;
       // if coord don't exist how could it move
-      if (typeof ev.pageX === 'undefined' && typeof ev.pageY === 'undefined') return;
+      if (typeof ev.pageX === 'undefined' && typeof ev.pageY === 'undefined') {
+        return;
+      }
       // under 200 ms is hard to do, and you would have to stop,
       // as continuous activity will bypass this
-      if ((Date.now() - startTime) < 200) return;
+      if (Date.now() - startTime < 200) return;
     }
 
     this.onActiveHandler(ev);
@@ -152,6 +149,7 @@ export default class IdleMonitor extends Component {
 
   startTimeout() {
     const { timeout } = this.props;
+
     clearTimeout(this.tId);
     this.tId = setTimeout(this.onTimeoutHandler, this.remaining || timeout);
     this.remaining = 0;
@@ -159,10 +157,7 @@ export default class IdleMonitor extends Component {
   }
 
   notify(reduxSuffix, event) {
-    const {
-      reduxActionPrefix,
-      dispatch,
-    } = this.props;
+    const { reduxActionPrefix, dispatch } = this.props;
 
     const payload = {
       now: Date.now(),
@@ -181,6 +176,7 @@ export default class IdleMonitor extends Component {
 
   run() {
     const { onRun } = this.props;
+
     this.idle = false;
     this.startTimeout();
 
@@ -189,6 +185,7 @@ export default class IdleMonitor extends Component {
 
   stop() {
     const { timeout, onStop } = this.props;
+
     clearTimeout(this.tId);
     this.remaining = timeout - (Date.now() - this.startTime);
 
@@ -196,16 +193,17 @@ export default class IdleMonitor extends Component {
   }
 
   render() {
-    const { activeClassName, idleClassName, children } = this.props;
-    const { hasClassName, className} = this.state;
-    return hasClassName
-      ? (
-        <div
-          className={className}
-        >{children || null}</div>)
-      : children || null;
-  }
+    const { children } = this.props;
+    const { hasClassName, className } = this.state;
 
+    return hasClassName ? (
+      <div className={className}>
+        {children || null}
+      </div>
+    ) : (
+      children || null
+    );
+  }
 }
 
 IdleMonitor.propTypes = {
@@ -238,7 +236,7 @@ IdleMonitor.defaultProps = {
     'MSPointerDown',
     'MSPointerMove',
   ],
-  element: (typeof document !== 'undefined') && document,
+  element: typeof document !== 'undefined' && document,
   children: null,
   onIdle: null,
   onActive: null,
