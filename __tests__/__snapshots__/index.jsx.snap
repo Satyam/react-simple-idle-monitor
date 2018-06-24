@@ -22,6 +22,12 @@ exports[`IdleMonitor from react-simple-idle-monitor Initial rendering with child
 </p>
 `;
 
+exports[`IdleMonitor from react-simple-idle-monitor Initial rendering with idleClassName and no children 1`] = `
+<div
+  className=""
+/>
+`;
+
 exports[`IdleMonitor from react-simple-idle-monitor Initial rendering with no properties nor children 1`] = `""`;
 
 exports[`IdleMonitor from react-simple-idle-monitor Rendering after timeout with children and idleClassName 1`] = `"<div class=\\"idle\\"><p>Hello</p></div>"`;

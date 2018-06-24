@@ -47,6 +47,11 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
       expect(wrapper).toMatchSnapshot();
     });
 
+    it('with idleClassName and no children', () => {
+      const wrapper = shallow(<IdleMonitor idleClassName="idle" />);
+      expect(wrapper).toMatchSnapshot();
+    });
+
     it('with children and activeClassName', () => {
       const wrapper = shallow(
         <IdleMonitor activeClassName="active">
