@@ -118,9 +118,11 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
       expect(wrapper.find('div.idle')).toHaveLength(0);
       jest.runAllTimers();
       onIdle.mockClear();
+      wrapper.update();
       expect(wrapper.find('div.active')).toHaveLength(0);
       expect(wrapper.find('div.idle')).toHaveLength(1);
       fireUIEvent();
+      wrapper.update();
       expect(wrapper.find('div.active')).toHaveLength(1);
       expect(wrapper.find('div.idle')).toHaveLength(0);
 
@@ -150,9 +152,11 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
       expect(wrapper.find('div.active')).toHaveLength(1);
       expect(wrapper.find('div.idle')).toHaveLength(0);
       jest.runAllTimers();
+      wrapper.update();
       expect(wrapper.find('div.active')).toHaveLength(0);
       expect(wrapper.find('div.idle')).toHaveLength(1);
       fireUIEvent();
+      wrapper.update();
       expect(wrapper.find('div.active')).toHaveLength(0);
       expect(wrapper.find('div.idle')).toHaveLength(1);
     });
@@ -201,11 +205,11 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
       expect(wrapper.find('div.idle')).toHaveLength(0);
       // enough extra time to trigger old timeout, but not the new one
       jest.runTimersToTime(10000);
+      wrapper.update();
       expect(wrapper.find('div.active')).toHaveLength(1);
       expect(wrapper.find('div.idle')).toHaveLength(0);
-      console.log(wrapper.debug())
       jest.runAllTimers();
-      console.log(wrapper.debug())
+      wrapper.update();
       expect(wrapper.find('div.active')).toHaveLength(0);
       expect(wrapper.find('div.idle')).toHaveLength(1);
     });
