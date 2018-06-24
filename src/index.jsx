@@ -26,26 +26,28 @@ export default class IdleMonitor extends Component {
   }
 
   componentDidMount() {
-    const { element, events } = this.props;
+    const { element, events, enabled } = this.props;
     if (!element) return;
     events.forEach(ev => element.addEventListener(ev, this.onEventHandler));
-    if (this.props.enabled) {
+    if (enabled) {
       this.run();
     } else {
       this.stop();
     }
   }
   componentWillReceiveProps(nextProps) {
+    const { enabled: nextEnabled, timeout: nextTimeout } = nextProps;
+    const { enabled, timeout } = this.props;
     /* istanbul ignore else */
-    if (!!nextProps.enabled !== !!this.props.enabled) {
-      if (nextProps.enabled) {
+    if (!!nextEnabled !== !!enabled) {
+      if (nextEnabled) {
         this.run();
       } else {
         this.stop();
       }
     }
-    if (nextProps.timeout !== this.props.timeout) {
-      this.remaining = nextProps.timeout;
+    if (nextTimeout !== timeout) {
+      this.remaining = nextTimeout;
       this.startTimeout();
     }
   }
@@ -67,6 +69,7 @@ export default class IdleMonitor extends Component {
       dispatch,
       activeClassName,
     } = this.props;
+    const { hasClassName } = this.state;
 
     let prevented = false;
     if (this.idle) {
@@ -93,7 +96,7 @@ export default class IdleMonitor extends Component {
             startTime: this.startTime,
           });
         }
-        if (this.state.hasClassName) this.setState({className: activeClassName || ''});
+        if (hasClassName) this.setState({ className: activeClassName || '' });
       }
     }
   }
@@ -103,11 +106,12 @@ export default class IdleMonitor extends Component {
       onIdle,
       idleClassName,
     } = this.props;
+    const { hasClassName } = this.state;
 
     this.idle = true;
 
     this.notify('idle', onIdle);
-    if (this.state.hasClassName) this.setState({className: idleClassName || ''});
+    if (hasClassName) this.setState({ className: idleClassName || '' });
   }
 
   onEventHandler(ev) {
@@ -116,9 +120,10 @@ export default class IdleMonitor extends Component {
       pageY,
       startTime,
     } = this;
+    const { enabled } = this.props;
 
     // If not enabled, ignore events
-    if (!this.props.enabled) return;
+    if (!enabled) return;
 
     /*
       The following is taken verbatim from
@@ -146,8 +151,9 @@ export default class IdleMonitor extends Component {
   }
 
   startTimeout() {
+    const { timeout } = this.props;
     clearTimeout(this.tId);
-    this.tId = setTimeout(this.onTimeoutHandler, this.remaining || this.props.timeout);
+    this.tId = setTimeout(this.onTimeoutHandler, this.remaining || timeout);
     this.remaining = 0;
     this.startTime = Date.now();
   }
@@ -174,28 +180,30 @@ export default class IdleMonitor extends Component {
   }
 
   run() {
+    const { onRun } = this.props;
     this.idle = false;
     this.startTimeout();
 
-    this.notify('run', this.props.onRun);
+    this.notify('run', onRun);
   }
 
   stop() {
+    const { timeout, onStop } = this.props;
     clearTimeout(this.tId);
-    this.remaining = this.props.timeout - (Date.now() - this.startTime);
+    this.remaining = timeout - (Date.now() - this.startTime);
 
-    this.notify('stop', this.props.onStop);
+    this.notify('stop', onStop);
   }
 
   render() {
-    const { activeClassName, idleClassName } = this.props;
+    const { activeClassName, idleClassName, children } = this.props;
     const { hasClassName, className} = this.state;
     return hasClassName
       ? (
         <div
           className={className}
-        >{this.props.children || null}</div>)
-      : this.props.children || null;
+        >{children || null}</div>)
+      : children || null;
   }
 
 }
