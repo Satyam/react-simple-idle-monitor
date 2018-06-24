@@ -19,6 +19,10 @@ export default class IdleMonitor extends Component {
     this.idle = false;
     this.onTimeoutHandler = this.onTimeoutHandler.bind(this);
     this.onEventHandler = this.onEventHandler.bind(this);
+    this.state = {
+      className: props.activeClassName || '',
+      hasClassName: props.activeClassName || props.idleClassName,
+    };
   }
 
   componentDidMount() {
@@ -62,7 +66,6 @@ export default class IdleMonitor extends Component {
       onActive,
       dispatch,
       activeClassName,
-      idleClassName,
     } = this.props;
 
     let prevented = false;
@@ -90,7 +93,7 @@ export default class IdleMonitor extends Component {
             startTime: this.startTime,
           });
         }
-        if (activeClassName || idleClassName) this.forceUpdate();
+        if (this.state.hasClassName) this.setState({className: activeClassName || ''});
       }
     }
   }
@@ -98,14 +101,13 @@ export default class IdleMonitor extends Component {
   onTimeoutHandler() {
     const {
       onIdle,
-      activeClassName,
       idleClassName,
     } = this.props;
 
     this.idle = true;
 
     this.notify('idle', onIdle);
-    if (activeClassName || idleClassName) this.forceUpdate();
+    if (this.state.hasClassName) this.setState({className: idleClassName || ''});
   }
 
   onEventHandler(ev) {
@@ -187,13 +189,11 @@ export default class IdleMonitor extends Component {
 
   render() {
     const { activeClassName, idleClassName } = this.props;
-    return (activeClassName || idleClassName)
+    const { hasClassName, className} = this.state;
+    return hasClassName
       ? (
         <div
-          className={this.idle
-            ? (idleClassName || '')
-            : (activeClassName || '')
-          }
+          className={className}
         >{this.props.children || null}</div>)
       : this.props.children || null;
   }
