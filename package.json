@@ -68,8 +68,8 @@
     }
   },
   "peerDependencies": {
-    "prop-types": "^15.5.10",
-    "react": "^15.5.4"
+    "prop-types": "^15.6.2",
+    "react": "^16.4.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -87,9 +87,5 @@
     "eslint-plugin-react": "^7.9.1",
     "jest": "^23.1.0",
     "react-dom": "^16.4.1"
-  },
-  "dependencies": {
-    "prop-types": "^15.6.2",
-    "react": "^16.4.1"
   }
 }
