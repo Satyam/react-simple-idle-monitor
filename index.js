@@ -44,6 +44,10 @@ var IdleMonitor = function (_Component) {
     _this.idle = false;
     _this.onTimeoutHandler = _this.onTimeoutHandler.bind(_this);
     _this.onEventHandler = _this.onEventHandler.bind(_this);
+    _this.state = {
+      className: props.activeClassName || '',
+      hasClassName: props.activeClassName || props.idleClassName
+    };
     return _this;
   }
 
@@ -54,13 +58,15 @@ var IdleMonitor = function (_Component) {
 
       var _props = this.props,
           element = _props.element,
-          events = _props.events;
+          events = _props.events,
+          enabled = _props.enabled;
+
 
       if (!element) return;
       events.forEach(function (ev) {
         return element.addEventListener(ev, _this2.onEventHandler);
       });
-      if (this.props.enabled) {
+      if (enabled) {
         this.run();
       } else {
         this.stop();
@@ -69,16 +75,23 @@ var IdleMonitor = function (_Component) {
   }, {
     key: 'componentWillReceiveProps',
     value: function componentWillReceiveProps(nextProps) {
+      var nextEnabled = nextProps.enabled,
+          nextTimeout = nextProps.timeout;
+      var _props2 = this.props,
+          enabled = _props2.enabled,
+          timeout = _props2.timeout;
+
       /* istanbul ignore else */
-      if (!!nextProps.enabled !== !!this.props.enabled) {
-        if (nextProps.enabled) {
+
+      if (!!nextEnabled !== !!enabled) {
+        if (nextEnabled) {
           this.run();
         } else {
           this.stop();
         }
       }
-      if (nextProps.timeout !== this.props.timeout) {
-        this.remaining = nextProps.timeout;
+      if (nextTimeout !== timeout) {
+        this.remaining = nextTimeout;
         this.startTimeout();
       }
     }
@@ -87,9 +100,10 @@ var IdleMonitor = function (_Component) {
     value: function componentWillUnmount() {
       var _this3 = this;
 
-      var _props2 = this.props,
-          element = _props2.element,
-          events = _props2.events;
+      var _props3 = this.props,
+          element = _props3.element,
+          events = _props3.events;
+
       /* The only time there is no element is when doing server-side rendering,
        * and in such a case, there can be no unmounting
       */
@@ -106,12 +120,12 @@ var IdleMonitor = function (_Component) {
     value: function onActiveHandler(event) {
       var _this4 = this;
 
-      var _props3 = this.props,
-          reduxActionPrefix = _props3.reduxActionPrefix,
-          onActive = _props3.onActive,
-          dispatch = _props3.dispatch,
-          activeClassName = _props3.activeClassName,
-          idleClassName = _props3.idleClassName;
+      var _props4 = this.props,
+          reduxActionPrefix = _props4.reduxActionPrefix,
+          onActive = _props4.onActive,
+          dispatch = _props4.dispatch,
+          activeClassName = _props4.activeClassName;
+      var hasClassName = this.state.hasClassName;
 
 
       var prevented = false;
@@ -137,23 +151,23 @@ var IdleMonitor = function (_Component) {
               startTime: this.startTime
             });
           }
-          if (activeClassName || idleClassName) this.forceUpdate();
+          if (hasClassName) this.setState({ className: activeClassName || '' });
         }
       }
     }
   }, {
     key: 'onTimeoutHandler',
     value: function onTimeoutHandler() {
-      var _props4 = this.props,
-          onIdle = _props4.onIdle,
-          activeClassName = _props4.activeClassName,
-          idleClassName = _props4.idleClassName;
+      var _props5 = this.props,
+          onIdle = _props5.onIdle,
+          idleClassName = _props5.idleClassName;
+      var hasClassName = this.state.hasClassName;
 
 
       this.idle = true;
 
       this.notify('idle', onIdle);
-      if (activeClassName || idleClassName) this.forceUpdate();
+      if (hasClassName) this.setState({ className: idleClassName || '' });
     }
   }, {
     key: 'onEventHandler',
@@ -161,10 +175,11 @@ var IdleMonitor = function (_Component) {
       var pageX = this.pageX,
           pageY = this.pageY,
           startTime = this.startTime;
+      var enabled = this.props.enabled;
 
       // If not enabled, ignore events
 
-      if (!this.props.enabled) return;
+      if (!enabled) return;
 
       /*
         The following is taken verbatim from
@@ -177,7 +192,9 @@ var IdleMonitor = function (_Component) {
         // if coord are same, it didn't move
         if (ev.pageX === pageX && ev.pageY === pageY) return;
         // if coord don't exist how could it move
-        if (typeof ev.pageX === 'undefined' && typeof ev.pageY === 'undefined') return;
+        if (typeof ev.pageX === 'undefined' && typeof ev.pageY === 'undefined') {
+          return;
+        }
         // under 200 ms is hard to do, and you would have to stop,
         // as continuous activity will bypass this
         if (Date.now() - startTime < 200) return;
@@ -193,17 +210,20 @@ var IdleMonitor = function (_Component) {
   }, {
     key: 'startTimeout',
     value: function startTimeout() {
+      var timeout = this.props.timeout;
+
+
       clearTimeout(this.tId);
-      this.tId = setTimeout(this.onTimeoutHandler, this.remaining || this.props.timeout);
+      this.tId = setTimeout(this.onTimeoutHandler, this.remaining || timeout);
       this.remaining = 0;
       this.startTime = Date.now();
     }
   }, {
     key: 'notify',
     value: function notify(reduxSuffix, event) {
-      var _props5 = this.props,
-          reduxActionPrefix = _props5.reduxActionPrefix,
-          dispatch = _props5.dispatch;
+      var _props6 = this.props,
+          reduxActionPrefix = _props6.reduxActionPrefix,
+          dispatch = _props6.dispatch;
 
 
       var payload = {
@@ -223,33 +243,41 @@ var IdleMonitor = function (_Component) {
   }, {
     key: 'run',
     value: function run() {
+      var onRun = this.props.onRun;
+
+
       this.idle = false;
       this.startTimeout();
 
-      this.notify('run', this.props.onRun);
+      this.notify('run', onRun);
     }
   }, {
     key: 'stop',
     value: function stop() {
-      clearTimeout(this.tId);
-      this.remaining = this.props.timeout - (Date.now() - this.startTime);
+      var _props7 = this.props,
+          timeout = _props7.timeout,
+          onStop = _props7.onStop;
 
-      this.notify('stop', this.props.onStop);
+
+      clearTimeout(this.tId);
+      this.remaining = timeout - (Date.now() - this.startTime);
+
+      this.notify('stop', onStop);
     }
   }, {
     key: 'render',
     value: function render() {
-      var _props6 = this.props,
-          activeClassName = _props6.activeClassName,
-          idleClassName = _props6.idleClassName;
+      var children = this.props.children;
+      var _state = this.state,
+          hasClassName = _state.hasClassName,
+          className = _state.className;
 
-      return activeClassName || idleClassName ? _react2.default.createElement(
+
+      return hasClassName ? _react2.default.createElement(
         'div',
-        {
-          className: this.idle ? idleClassName || '' : activeClassName || ''
-        },
-        this.props.children || null
-      ) : this.props.children || null;
+        { className: className },
+        children || null
+      ) : children || null;
     }
   }]);
 
