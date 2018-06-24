@@ -1,6 +1,6 @@
 {
   "name": "react-simple-idle-monitor",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Simple monitor of idle time for React",
   "main": "index.js",
   "scripts": {
