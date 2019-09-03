@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "outDir": "./", // path to output directory
+    "strictNullChecks": true, // enable strict null checks as a best practice
+    "module": "es6", // specify module code generation
+    "target": "es5", // specify ECMAScript target version
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react"
+  },
+  "files": ["./src/index.tsx"],
+  "references": [{ "path": "./__tests__" }]
+}

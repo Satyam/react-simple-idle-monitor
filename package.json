@@ -5,11 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "lint": "eslint --ext .jsx,.js . || exit 0",
-    "build": "babel src/index.jsx --out-file index.js",
-    "preversion": "npm test && eslint --ext .jsx,.js .",
+    "lint": "eslint --ext .jsx,.js,.tsx,.ts ./src",
+    "build": "babel src/index.tsx --out-file index.js",
+    "preversion": "npm test && eslint --ext .jsx,.js,.tsx .",
     "version": "npm run build && git add index.js",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "prettier": "prettier --write ./src/index.tsx ./__tests__/index.jsx",
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand"
   },
   "repository": {
     "type": "git",
@@ -31,63 +33,115 @@
   "jest": {
     "moduleFileExtensions": [
       "js",
-      "jsx"
+      "jsx",
+      "ts",
+      "tsx"
     ],
     "coverageDirectory": "<rootDir>/coverage",
     "coverageReporters": [
       "html",
       "text"
     ],
-    "snapshotSerializers": [
-      "enzyme-to-json/serializer"
+    "setupFiles": [
+      "<rootDir>/node_modules/regenerator-runtime/runtime"
     ]
   },
   "babel": {
     "presets": [
-      "@babel/preset-env",
-      "@babel/preset-react"
+      [
+        "@babel/preset-env",
+        {
+          "targets": "> 0.25%, not dead"
+        }
+      ],
+      "@babel/preset-react",
+      [
+        "@babel/preset-typescript",
+        {
+          "isTSX": true,
+          "allExtensions": true
+        }
+      ]
     ]
   },
   "eslintConfig": {
-    "extends": "airbnb",
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint",
+      "react-hooks"
+    ],
+    "parserOptions": {
+      "ecmaFeatures": {
+        "jsx": true
+      },
+      "useJSXTextNode": true,
+      "project": "./tsconfig.json"
+    },
+    "settings": {
+      "react": {
+        "version": "16.8"
+      }
+    },
+    "extends": [
+      "eslint:recommended",
+      "plugin:react/recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:@typescript-eslint/recommended-requiring-type-checking"
+    ],
     "env": {
       "node": true,
       "jest": true,
       "browser": true
     },
     "rules": {
-      "react/forbid-prop-types": [
-        2,
+      "no-use-before-define": [
+        "error",
+        "nofunc"
+      ],
+      "react/prop-types": "off",
+      "react/jsx-filename-extension": [
+        1,
         {
-          "forbid": [
-            "object",
-            "array"
+          "extensions": [
+            ".js",
+            ".jsx",
+            ".tsx"
           ]
         }
       ]
     }
   },
+  "prettier": {
+    "trailingComma": "es5",
+    "tabWidth": 2,
+    "semi": true,
+    "singleQuote": true
+  },
   "peerDependencies": {
-    "prop-types": "^15.6.2",
-    "react": "^15.5.0 || ^16.0.0"
+    "react": "^16.8.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.5",
     "@babel/preset-env": "^7.4.5",
     "@babel/preset-react": "^7.0.0",
+    "@babel/preset-typescript": "^7.3.3",
+    "@testing-library/jest-dom": "^4.1.0",
+    "@testing-library/react": "^9.1.3",
+    "@typescript-eslint/eslint-plugin": "^2.0.0",
+    "@typescript-eslint/parser": "^2.0.0",
     "babel-jest": "^24.8.0",
-    "enzyme": "^3.3.0",
-    "enzyme-adapter-react-16": "^1.1.1",
-    "enzyme-to-json": "^3.3.4",
     "eslint": "^5.0.0",
-    "eslint-config-airbnb": "^17.0.0",
-    "eslint-plugin-import": "^2.12.0",
-    "eslint-plugin-jsx-a11y": "^6.0.3",
     "eslint-plugin-react": "^7.9.1",
+    "eslint-plugin-react-hooks": "^2.0.1",
     "jest": "^24.8.0",
-    "prop-types": "^15.6.2",
-    "react": "^16.4.1",
-    "react-dom": "^16.4.1"
+    "prettier": "^1.18.2",
+    "react": "^16.8.0",
+    "react-dom": "^16.8.0",
+    "typescript": "^3.5.3"
+  },
+  "dependencies": {
+    "@types/react": "^16.9.2"
   }
 }

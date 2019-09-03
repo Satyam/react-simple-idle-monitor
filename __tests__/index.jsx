@@ -1,66 +1,57 @@
 /* eslint-disable react/no-multi-comp */
-/* eslint comma-dangle: ["error", {
-  "functions": "never",
-  "arrays": "only-multiline",
-  "objects": "only-multiline",
-}] */
+
 import React, { Component } from 'react';
 import { renderToString, renderToStaticMarkup } from 'react-dom/server';
-import { shallow, mount, configure } from 'enzyme';
-import Adapter from 'enzyme-adapter-react-16';
-
-import IdleMonitor from '../src';
-
-configure({ adapter: new Adapter() });
-
-// Since the monitor checks for events in document,
-// enzyme's simulate doesn't work,
-// the event has to be created and fired via JSDOM itself.
-function fireUIEvent() {
-  const event = document.createEvent('HTMLEvents');
-  event.initEvent('keydown', false, true);
-  document.dispatchEvent(event);
-}
+import { render, fireEvent, wait, act } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect';
+import IdleMonitor from '../src/index.tsx';
 
 jest.useFakeTimers();
+
+const EPOCH = 123000000;
+
+beforeEach(() => {
+  Date.now = jest.fn(() => EPOCH);
+});
+
+function advanceTimers(ms) {
+  Date.new = jest.fn(() => EPOCH + ms);
+  jest.advanceTimersByTime(ms);
+}
 
 describe('IdleMonitor from react-simple-idle-monitor', () => {
   describe('Initial rendering', () => {
     it('with no properties nor children', () => {
-      const wrapper = shallow(<IdleMonitor />);
-      expect(wrapper).toMatchSnapshot();
+      const { container } = render(<IdleMonitor />);
+      expect(container.firstChild).toMatchSnapshot();
     });
 
     it('with children and no properties', () => {
-      const wrapper = shallow(
+      const { container } = render(
         <IdleMonitor>
-          <p>
-            Hello
-          </p>
+          <p>Hello</p>
         </IdleMonitor>
       );
-      expect(wrapper).toMatchSnapshot();
+      expect(container.firstChild).toMatchSnapshot();
     });
 
     it('with activeClassName and no children', () => {
-      const wrapper = shallow(<IdleMonitor activeClassName="active" />);
-      expect(wrapper).toMatchSnapshot();
+      const { container } = render(<IdleMonitor activeClassName="active" />);
+      expect(container.firstChild).toMatchSnapshot();
     });
 
     it('with idleClassName and no children', () => {
-      const wrapper = shallow(<IdleMonitor idleClassName="idle" />);
-      expect(wrapper).toMatchSnapshot();
+      const { container } = render(<IdleMonitor idleClassName="idle" />);
+      expect(container.firstChild).toMatchSnapshot();
     });
 
     it('with children and activeClassName', () => {
-      const wrapper = shallow(
+      const { container } = render(
         <IdleMonitor activeClassName="active">
-          <p>
-            Hello
-          </p>
+          <p>Hello</p>
         </IdleMonitor>
       );
-      expect(wrapper).toMatchSnapshot();
+      expect(container.firstChild).toMatchSnapshot();
     });
   });
   describe('Rendering after timeout', () => {
@@ -69,41 +60,37 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
      * https://github.com/adriantoine/enzyme-to-json/issues/47
      */
     it('with no properties nor children', () => {
-      const wrapper = mount(<IdleMonitor />);
-      jest.runAllTimers();
-      expect(wrapper.html()).toMatchSnapshot();
+      const { container } = render(<IdleMonitor />);
+      act(() => jest.runAllTimers());
+      expect(container.firstChild).toMatchSnapshot();
     });
 
     it('with children and no properties', () => {
-      const wrapper = mount(
+      const { container } = render(
         <IdleMonitor>
-          <p>
-            Hello
-          </p>
+          <p>Hello</p>
         </IdleMonitor>
       );
-      jest.runAllTimers();
-      expect(wrapper.html()).toMatchSnapshot();
+      act(() => jest.runAllTimers());
+      expect(container.firstChild).toMatchSnapshot();
     });
 
     it('with idleClassName and no children', () => {
-      const wrapper = mount(
+      const { container } = render(
         <IdleMonitor activeClassName="active" idleClassName="idle" />
       );
-      jest.runAllTimers();
-      expect(wrapper.html()).toMatchSnapshot();
+      act(() => jest.runAllTimers());
+      expect(container.firstChild).toMatchSnapshot();
     });
 
     it('with children and idleClassName', () => {
-      const wrapper = mount(
+      const { container } = render(
         <IdleMonitor activeClassName="active" idleClassName="idle">
-          <p>
-            Hello
-          </p>
+          <p>Hello</p>
         </IdleMonitor>
       );
-      jest.runAllTimers();
-      expect(wrapper.html()).toMatchSnapshot();
+      act(() => jest.runAllTimers());
+      expect(container.firstChild).toMatchSnapshot();
     });
   });
 
@@ -111,7 +98,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
     it('nothing should be fired before timeout', () => {
       const onIdle = jest.fn();
       const onActive = jest.fn();
-      mount(
+      render(
         <div>
           <IdleMonitor onIdle={onIdle} onActive={onActive} />
         </div>
@@ -123,17 +110,17 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
     it('should fire onIdle after timeout', () => {
       const onIdle = jest.fn();
       const onActive = jest.fn();
-      mount(
+      render(
         <div>
           <IdleMonitor onIdle={onIdle} onActive={onActive} />
         </div>
       );
 
-      jest.runAllTimers();
+      act(() => jest.runAllTimers());
       expect(onIdle).toHaveBeenCalledWith(
         expect.objectContaining({
           now: expect.any(Number),
-          startTime: expect.any(Number)
+          startTime: expect.any(Number),
         })
       );
       expect(Date.now() - onIdle.mock.calls[0][0].now).toBeLessThan(100);
@@ -144,25 +131,25 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
     it('should fire onActive after UI event', () => {
       const onIdle = jest.fn();
       const onActive = jest.fn();
-      const wrapper = mount(
+      const { container } = render(
         <IdleMonitor
           onIdle={onIdle}
           onActive={onActive}
           activeClassName="active"
           idleClassName="idle"
-        />
+        >
+          Hola
+        </IdleMonitor>
       );
-      expect(wrapper.find('div.active')).toHaveLength(1);
-      expect(wrapper.find('div.idle')).toHaveLength(0);
-      jest.runAllTimers();
+      expect(container.querySelectorAll('div.active')).toHaveLength(1);
+      expect(container.querySelectorAll('div.idle')).toHaveLength(0);
+      act(() => jest.runAllTimers());
       onIdle.mockClear();
-      wrapper.update();
-      expect(wrapper.find('div.active')).toHaveLength(0);
-      expect(wrapper.find('div.idle')).toHaveLength(1);
-      fireUIEvent();
-      wrapper.update();
-      expect(wrapper.find('div.active')).toHaveLength(1);
-      expect(wrapper.find('div.idle')).toHaveLength(0);
+      expect(container.querySelectorAll('div.active')).toHaveLength(0);
+      expect(container.querySelectorAll('div.idle')).toHaveLength(1);
+      fireEvent.keyDown(container, { key: 'Enter', code: 13 });
+      expect(container.querySelectorAll('div.active')).toHaveLength(1);
+      expect(container.querySelectorAll('div.idle')).toHaveLength(0);
 
       expect(onIdle).not.toHaveBeenCalled();
       expect(onActive).toHaveBeenCalledWith(
@@ -180,45 +167,45 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
     });
 
     it('it should not change classname if activation prevented', () => {
-      const onActive = (ev) => {
+      const onActive = ev => {
         ev.preventActive();
       };
-      const wrapper = mount(
+      const { container } = render(
         <IdleMonitor
           onActive={onActive}
           activeClassName="active"
           idleClassName="idle"
-        />
+        >
+          Hola
+        </IdleMonitor>
       );
-      expect(wrapper.find('div.active')).toHaveLength(1);
-      expect(wrapper.find('div.idle')).toHaveLength(0);
-      jest.runAllTimers();
-      wrapper.update();
-      expect(wrapper.find('div.active')).toHaveLength(0);
-      expect(wrapper.find('div.idle')).toHaveLength(1);
-      fireUIEvent();
-      wrapper.update();
-      expect(wrapper.find('div.active')).toHaveLength(0);
-      expect(wrapper.find('div.idle')).toHaveLength(1);
+      expect(container.querySelectorAll('div.active')).toHaveLength(1);
+      expect(container.querySelectorAll('div.idle')).toHaveLength(0);
+      act(() => jest.runAllTimers());
+      expect(container.querySelectorAll('div.active')).toHaveLength(0);
+      expect(container.querySelectorAll('div.idle')).toHaveLength(1);
+      fireEvent.keyDown(container, { key: 'Enter', code: 13 });
+      expect(container.querySelectorAll('div.active')).toHaveLength(0);
+      expect(container.querySelectorAll('div.idle')).toHaveLength(1);
     });
 
     it('should not fire onActive after UI event if not idle first', () => {
       const onIdle = jest.fn();
       const onActive = jest.fn();
-      mount(
+      const { container } = render(
         <div>
           <IdleMonitor onIdle={onIdle} onActive={onActive} />
         </div>
       );
 
-      fireUIEvent();
+      fireEvent.keyDown(container, { key: 'Enter', code: 13 });
 
       expect(onIdle).not.toHaveBeenCalled();
       expect(onActive).not.toHaveBeenCalled();
     });
 
     it('should restart timers when timeout changed', () => {
-      const Wrap = class extends Component {
+      const Wrap1 = class extends Component {
         constructor(props) {
           super(props);
           this.done = false;
@@ -234,33 +221,34 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
               timeout={this.done ? 30000 : 20000}
               activeClassName="active"
               idleClassName="idle"
-            />
+            >
+              Hola
+            </IdleMonitor>
           );
         }
       };
-      const wrapper = mount(<Wrap />);
-      expect(wrapper.find('div.active')).toHaveLength(1);
-      expect(wrapper.find('div.idle')).toHaveLength(0);
+      const { container } = render(<Wrap1 />);
+      expect(container.querySelectorAll('div.active')).toHaveLength(1);
+      expect(container.querySelectorAll('div.idle')).toHaveLength(0);
       // Enough time to trigger the timer in Wrap, not the idle timer.
-      jest.runTimersToTime(15000);
-      expect(wrapper.find('div.active')).toHaveLength(1);
-      expect(wrapper.find('div.idle')).toHaveLength(0);
+      act(() => advanceTimers(15000));
+      expect(container.querySelectorAll('div.active')).toHaveLength(1);
+      expect(container.querySelectorAll('div.idle')).toHaveLength(0);
       // enough extra time to trigger old timeout, but not the new one
-      jest.runTimersToTime(10000);
-      wrapper.update();
-      expect(wrapper.find('div.active')).toHaveLength(1);
-      expect(wrapper.find('div.idle')).toHaveLength(0);
-      jest.runAllTimers();
-      wrapper.update();
-      expect(wrapper.find('div.active')).toHaveLength(0);
-      expect(wrapper.find('div.idle')).toHaveLength(1);
+      act(() => advanceTimers(10000));
+
+      expect(container.querySelectorAll('div.active')).toHaveLength(1);
+      expect(container.querySelectorAll('div.idle')).toHaveLength(0);
+      act(() => jest.runAllTimers());
+      expect(container.querySelectorAll('div.active')).toHaveLength(0);
+      expect(container.querySelectorAll('div.idle')).toHaveLength(1);
     });
   });
 
   describe('Redux actions dispatched', () => {
     it('`_run` action should be dispatched on init', () => {
       const dispatch = jest.fn();
-      mount(
+      render(
         <div>
           <IdleMonitor dispatch={dispatch} reduxActionPrefix="redux_action" />
         </div>
@@ -281,13 +269,13 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
 
     it('`_idle` action should be dispatched after timeout', () => {
       const dispatch = jest.fn();
-      mount(
+      render(
         <div>
           <IdleMonitor dispatch={dispatch} reduxActionPrefix="redux_action" />
         </div>
       );
       dispatch.mockClear();
-      jest.runAllTimers();
+      act(() => jest.runAllTimers());
       expect(dispatch).toHaveBeenCalledWith(
         expect.objectContaining({
           type: expect.any(String),
@@ -304,15 +292,15 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
 
     it('`_active` action should be dispatched after UI event', () => {
       const dispatch = jest.fn();
-      mount(
+      const { container } = render(
         <div>
           <IdleMonitor dispatch={dispatch} reduxActionPrefix="redux_action" />
         </div>
       );
-      jest.runAllTimers();
+      act(() => jest.runAllTimers());
       dispatch.mockClear();
 
-      fireUIEvent();
+      fireEvent.keyDown(container, { key: 'Enter', code: 13 });
 
       expect(dispatch).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -330,10 +318,10 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
 
     it('`_active` action should not be dispatched after UI event if prevented', () => {
       const dispatch = jest.fn();
-      const onActive = (ev) => {
+      const onActive = ev => {
         ev.preventActive();
       };
-      mount(
+      const { container } = render(
         <div>
           <IdleMonitor
             dispatch={dispatch}
@@ -342,24 +330,24 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
           />
         </div>
       );
-      jest.runAllTimers();
+      act(() => jest.runAllTimers());
       dispatch.mockClear();
 
-      fireUIEvent();
+      fireEvent.keyDown(container, { key: 'Enter', code: 13 });
 
       expect(dispatch).not.toHaveBeenCalled();
     });
 
     it('it should not dispatch anything after UI event if not idle first', () => {
       const dispatch = jest.fn();
-      mount(
+      const { container } = render(
         <div>
           <IdleMonitor dispatch={dispatch} reduxActionPrefix="redux_action" />
         </div>
       );
       dispatch.mockClear();
 
-      fireUIEvent();
+      fireEvent.keyDown(container, { key: 'Enter', code: 13 });
 
       expect(dispatch).not.toHaveBeenCalled();
     });
@@ -367,7 +355,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
     it('`_stop` action should be called when unmounted', () => {
       const dispatch = jest.fn();
 
-      const Wrap = class extends Component {
+      const Wrap2 = class extends Component {
         constructor(props) {
           super(props);
           this.done = false;
@@ -379,19 +367,17 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
 
         render() {
           return this.done ? (
-            <p>
-              Hello
-            </p>
+            <p>Hello</p>
           ) : (
             <IdleMonitor dispatch={dispatch} reduxActionPrefix="redux_action" />
           );
         }
       };
-      mount(<Wrap />);
+      render(<Wrap2 />);
       dispatch.mockClear();
 
       // Enough time to trigger the timer in Wrap, not the idle timer.
-      jest.runTimersToTime(20000);
+      act(() => advanceTimers(20000));
 
       expect(dispatch).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -409,7 +395,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
 
     it('`_stop` action should be called when disabled', () => {
       const dispatch = jest.fn();
-      const Wrap = class extends Component {
+      const Wrap3 = class extends Component {
         constructor(props) {
           super(props);
           this.enabled = true;
@@ -429,9 +415,9 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
           );
         }
       };
-      mount(<Wrap />);
+      const { container } = render(<Wrap3 />);
       dispatch.mockClear();
-      jest.runTimersToTime(20000);
+      act(() => advanceTimers(20000));
       expect(dispatch).toHaveBeenCalledWith(
         expect.objectContaining({
           type: expect.any(String),
@@ -447,15 +433,15 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
 
       // Nothing else should be dispatched while disabled
       dispatch.mockClear();
-      jest.runAllTimers();
+      act(() => jest.runAllTimers());
       expect(dispatch).not.toHaveBeenCalled();
-      fireUIEvent();
+      fireEvent.keyDown(container, { key: 'Enter', code: 13 });
       expect(dispatch).not.toHaveBeenCalled();
     });
 
     it('`_stop` action should be called when started disabled', () => {
       const dispatch = jest.fn();
-      const Wrap = class extends Component {
+      const Wrap4 = class extends Component {
         constructor(props) {
           super(props);
           this.enabled = false;
@@ -475,7 +461,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
           );
         }
       };
-      mount(<Wrap />);
+      render(<Wrap4 />);
       expect(dispatch).toHaveBeenCalledWith(
         expect.objectContaining({
           type: expect.any(String),
@@ -487,7 +473,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
       expect(dispatch.mock.calls[0][0].startTime).toBeUndefined();
 
       dispatch.mockClear();
-      jest.runTimersToTime(20000);
+      act(() => advanceTimers(20000));
 
       expect(dispatch).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -504,7 +490,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
 
       // It should resume normal operation
       dispatch.mockClear();
-      jest.runAllTimers();
+      act(() => jest.runAllTimers());
       expect(dispatch).toHaveBeenCalledWith(
         expect.objectContaining({
           type: expect.any(String),
@@ -527,7 +513,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
       const onIdle = jest.fn();
       const onActive = jest.fn();
       const dispatch = jest.fn();
-      const wrapper = mount(
+      const { container } = render(
         <IdleMonitor
           element={null}
           activeClassName="active"
@@ -539,13 +525,11 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
           dispatch={dispatch}
           reduxActionPrefix="redux_action"
         >
-          <p>
-            Hello
-          </p>
+          <p>Hello</p>
         </IdleMonitor>
       );
-      jest.runAllTimers();
-      expect(wrapper.html()).toMatchSnapshot();
+      act(() => jest.runAllTimers());
+      expect(container.firstChild).toMatchSnapshot();
       expect(onIdle).not.toHaveBeenCalled();
       expect(onActive).not.toHaveBeenCalled();
       expect(onRun).not.toHaveBeenCalled();
@@ -559,7 +543,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
       const onIdle = jest.fn();
       const onActive = jest.fn();
       const dispatch = jest.fn();
-      mount(
+      const { container } = render(
         <IdleMonitor
           element={null}
           onIdle={onIdle}
@@ -570,10 +554,10 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
           reduxActionPrefix="redux_action"
         />
       );
-      jest.runAllTimers();
+      act(() => jest.runAllTimers());
       // Don't event bother clearing the mocks since
       // they should not have been called anyway
-      fireUIEvent();
+      fireEvent.keyDown(container, { key: 'Enter', code: 13 });
 
       expect(onIdle).not.toHaveBeenCalled();
       expect(onActive).not.toHaveBeenCalled();
@@ -602,9 +586,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
             idleClassName="idle"
             reduxActionPrefix="redux_action"
           >
-            <p>
-              Hello
-            </p>
+            <p>Hello</p>
           </IdleMonitor>
         )
       ).toMatchSnapshot();
@@ -619,9 +601,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
             idleClassName="idle"
             reduxActionPrefix="redux_action"
           >
-            <p>
-              Hello
-            </p>
+            <p>Hello</p>
           </IdleMonitor>
         )
       ).toMatchSnapshot();

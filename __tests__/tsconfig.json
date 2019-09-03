@@ -1,0 +1,9 @@
+{
+  // https://github.com/typescript-eslint/typescript-eslint/issues/890
+  // https://www.typescriptlang.org/docs/handbook/project-references.html
+  "extends": "../tsconfig.json",
+  "include": [
+    "./index.jsx"
+    // etc
+  ]
+}
