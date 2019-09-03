@@ -17,6 +17,7 @@ import React, {
   useState,
   useRef,
 } from 'react';
+import PropTypes from 'prop-types';
 
 type IdleMonitorContext = {
   idle: boolean;
@@ -68,7 +69,8 @@ type IdleMonitorProps = {
   ) => void;
   onRun?: (context: IdleMonitorContext) => void;
   onStop?: (context: IdleMonitorContext) => void;
-  element?: HTMLElement;
+  element?: Node;
+  children?: React.ReactNode;
   reduxActionPrefix?: string;
   dispatch?: (context: IdleMonitorContext & { type: string }) => void;
   enabled?: boolean;
@@ -80,7 +82,7 @@ export const IdleMonitorContext = createContext<IdleMonitorContext>(
   initialContextValues
 );
 
-const IdleMonitor: React.FC<IdleMonitorProps> = ({
+const IdleMonitor = ({
   timeout = 1000 * 60 * 20,
   events = [
     'mousemove',
@@ -94,7 +96,7 @@ const IdleMonitor: React.FC<IdleMonitorProps> = ({
     'MSPointerDown',
     'MSPointerMove',
   ],
-  element = typeof document !== 'undefined' && document,
+  element = document,
   children,
   onIdle,
   onActive,
@@ -105,7 +107,7 @@ const IdleMonitor: React.FC<IdleMonitorProps> = ({
   enabled = true,
   activeClassName = '',
   idleClassName = '',
-}) => {
+}: IdleMonitorProps) => {
   function reducer(
     state: IdleMonitorContext,
     action: IdleMonitorActions
@@ -286,7 +288,7 @@ const IdleMonitor: React.FC<IdleMonitorProps> = ({
       stop();
     }
     isInitializing.current = false;
-    return () => {
+    return (): void => {
       if (ctx.enabled) stop();
     };
   }, []);
@@ -330,3 +332,19 @@ export default IdleMonitor;
 export function useIdleMonitor(): IdleMonitorContext {
   return useContext(IdleMonitorContext);
 }
+
+IdleMonitor.propTypes = {
+  timeout: PropTypes.number,
+  events: PropTypes.arrayOf(PropTypes.string),
+  onIdle: PropTypes.func,
+  onActive: PropTypes.func,
+  onRun: PropTypes.func,
+  onStop: PropTypes.func,
+  element: PropTypes.element,
+  children: PropTypes.element,
+  reduxActionPrefix: PropTypes.string,
+  dispatch: PropTypes.func,
+  enabled: PropTypes.bool,
+  activeClassName: PropTypes.string,
+  idleClassName: PropTypes.string,
+};

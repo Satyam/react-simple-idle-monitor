@@ -3,10 +3,14 @@
     "outDir": "./", // path to output directory
     "strictNullChecks": true, // enable strict null checks as a best practice
     "module": "es6", // specify module code generation
-    "target": "es5", // specify ECMAScript target version
+    "target": "es6", // specify ECMAScript target version
     "allowSyntheticDefaultImports": true,
-    "jsx": "react"
+    "jsx": "react",
+    "declaration": true,
+    "declarationDir": "./",
+    "moduleResolution": "node"
   },
-  "files": ["./src/index.tsx"],
-  "references": [{ "path": "./__tests__" }]
+  "files": ["./src/index.tsx"]
+  // "references": [{ "path": "./__tests__" }],
+  // "exclude": ["node_modules", "__tests__"]
 }

@@ -3,6 +3,7 @@
   "version": "0.3.3",
   "description": "Simple monitor of idle time for React",
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "test": "jest",
     "lint": "eslint --ext .jsx,.js,.tsx,.ts ./src",
@@ -11,7 +12,8 @@
     "version": "npm run build && git add index.js",
     "postversion": "git push && git push --tags",
     "prettier": "prettier --write ./src/index.tsx ./__tests__/index.jsx",
-    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand"
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
+    "declarations": "tsc --emitDeclarationOnly"
   },
   "repository": {
     "type": "git",
@@ -87,7 +89,10 @@
       "plugin:react/recommended",
       "plugin:@typescript-eslint/eslint-recommended",
       "plugin:@typescript-eslint/recommended",
-      "plugin:@typescript-eslint/recommended-requiring-type-checking"
+      "plugin:@typescript-eslint/recommended-requiring-type-checking",
+      "plugin:@typescript-eslint/recommended",
+      "prettier",
+      "prettier/@typescript-eslint"
     ],
     "env": {
       "node": true,
@@ -133,15 +138,19 @@
     "@typescript-eslint/parser": "^2.0.0",
     "babel-jest": "^24.8.0",
     "eslint": "^5.0.0",
+    "eslint-config-prettier": "^6.1.0",
     "eslint-plugin-react": "^7.9.1",
     "eslint-plugin-react-hooks": "^2.0.1",
     "jest": "^24.8.0",
     "prettier": "^1.18.2",
+    "prop-types": "^15.7.2",
     "react": "^16.8.0",
     "react-dom": "^16.8.0",
     "typescript": "^3.5.3"
   },
   "dependencies": {
-    "@types/react": "^16.9.2"
+    "@types/prop-types": "^15.7.1",
+    "@types/react": "^16.9.2",
+    "@types/react-dom": "^16.9.0"
   }
 }
