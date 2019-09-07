@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-    "outDir": "./",
+    "outDir": "./lib",
     "strictNullChecks": true,
     "module": "es6",
     "target": "es6",
     "allowSyntheticDefaultImports": true,
     "jsx": "react",
     "declaration": true,
-    "declarationDir": "./",
+    "declarationDir": "./lib",
     "moduleResolution": "node"
   },
-  "files": ["./src/index.tsx"]
+  "include": ["./src/*.tsx"]
 }
