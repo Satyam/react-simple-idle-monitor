@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>ExampleIdleMonitor</title>
+    <style type="text/css">
+      .active {
+        background-color: aliceblue;
+        color: black;
+      }
+      .idle {
+        background-color: gray;
+        color: white;
+      }
+      .idleMonitorArea {
+        border: silver thin solid;
+        margin: 1em;
+        padding: 0.5em 1em;
+      }
+      .inactive-area {
+        border: silver thin solid;
+        margin: 1em;
+        padding: 0.5em 1em;
+      }
+      .idleMonitorReduxArea {
+        border: silver thin solid;
+        margin: 1em;
+        padding: 0.5em 1em;
+      }
+      .idleMonitorReduxArea pre {
+        height: 10em;
+        overflow-y: scroll;
+      }
+      .IdleMonitorEventsArea {
+        border: silver thin solid;
+        margin: 1em;
+        padding: 0.5em 1em;
+      }
+      .IdleMonitorEventsArea pre {
+        height: 10em;
+        overflow-y: scroll;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>IdleMonitor Example</h2>
+    <div id="root"></div>
+    <script src="./index.tsx"></script>
+  </body>
+</html>
