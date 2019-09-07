@@ -2,18 +2,19 @@
   "name": "react-simple-idle-monitor",
   "version": "0.3.3",
   "description": "Simple monitor of idle time for React",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "test": "jest",
     "lint": "eslint --ext .jsx,.js,.tsx,.ts ./src",
-    "build": "babel src/index.tsx --out-file index.js",
+    "build": "babel src -d lib -x .tsx",
     "preversion": "npm test && eslint --ext .jsx,.js,.tsx .",
     "version": "npm run build && git add index.js",
     "postversion": "git push && git push --tags",
     "prettier": "prettier --write ./src/index.tsx ./__tests__/index.jsx",
     "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
-    "declarations": "tsc --emitDeclarationOnly"
+    "declarations": "tsc --emitDeclarationOnly",
+    "example": "parcel examples/index.html --out-dir examples/dist --cache-dir examples/cache"
   },
   "repository": {
     "type": "git",
@@ -143,6 +144,7 @@
     "eslint-plugin-react": "^7.9.1",
     "eslint-plugin-react-hooks": "^2.0.1",
     "jest": "^24.8.0",
+    "parcel-bundler": "^1.12.3",
     "prettier": "^1.18.2",
     "prop-types": "^15.7.2",
     "react": "^16.8.0",
