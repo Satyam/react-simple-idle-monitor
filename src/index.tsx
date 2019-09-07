@@ -113,7 +113,7 @@ type IdleMonitorActions =
       timeout: number;
     };
 
-type IdleMonitorProps = {
+export type IdleMonitorProps = {
   /**
    * Number of milliseconds of inactivity to assume idleness.
    * defaults to 20 minutes
@@ -226,19 +226,19 @@ const IdleMonitor = ({
 
   const timerId = useRef<number>();
   const pageXY = useRef<[number, number]>([0, 0]);
-  const isInitializing = useRef<boolean>(true);
+  const isMounted = useRef<boolean>(false);
 
   const hasClassName = !!(activeClassName || idleClassName);
 
   function run(newTimeout?: number): void {
-    // console.log('**run**', { newTimeout });
+    console.log('**run**', { newTimeout });
     currentTimeout.current = newTimeout || timeout;
     dispatch({ type: Action.Run });
     startTimeout();
   }
 
   function stop(): void {
-    // console.log('**stop**', { timerId: timerId.current });
+    console.log('**stop**', { timerId: timerId.current });
     clearTimeout(timerId.current);
     dispatch({
       type: Action.Stop,
@@ -246,12 +246,13 @@ const IdleMonitor = ({
   }
 
   function setIdle(): void {
-    // console.log('**Idle**', { hasClassName, idleClassName });
+    console.log('**Idle**', { hasClassName, idleClassName });
     dispatch({ type: Action.Idle });
     if (hasClassName) setClassName(idleClassName);
   }
 
   function setActive(newTimeout?: number): void {
+    console.log('**setActive**', { newTimeout, hasClassName });
     dispatch({
       type: Action.Active,
       timeout: newTimeout || currentTimeout.current,
@@ -261,6 +262,7 @@ const IdleMonitor = ({
   }
 
   function activate(newTimeout?: number | false): void {
+    console.log('**activate**', { newTimeout });
     if (newTimeout === false) {
       setIdle();
     } else {
@@ -296,47 +298,46 @@ const IdleMonitor = ({
   }
 
   useEffect(() => {
-    if (isInitializing.current) return;
-    // console.log('useEffect enabled', {
-    //   enabled,
-    //   timeout,
-    //   state,
-    // });
+    if (!isMounted.current) return;
+    console.log('useEffect enabled', {
+      enabled,
+      state,
+    });
     if (enabled) {
       if (!state.isRunning) run();
     } else if (state.isRunning) stop();
   }, [enabled]);
 
   useEffect(() => {
-    if (isInitializing.current) return;
-    // console.log('useEffect timeout', {
-    //   timeout,
-    // });
+    if (!isMounted.current) return;
+    console.log('useEffect timeout', {
+      timeout,
+    });
     currentTimeout.current = timeout;
     startTimeout();
   }, [timeout]);
 
   useEffect(() => {
-    // console.log('useEffect init', { enabled, timeout, state });
+    console.log('useEffect init', { enabled, timeout, state });
     if (enabled) {
       run();
     } else {
       stop();
     }
-    isInitializing.current = false;
+    isMounted.current = true;
     return (): void => {
+      console.log('useEffect unmount', state);
       if (state.isRunning) stop();
     };
   }, []);
 
   function startTimeout(newTimeout?: number): void {
-    // console.log('**startTimeout**', {
-    //   newTimeout,
-    //   timerId: timerId.current,
-    //   remaining: state.remaining,
-    //   timeout,
-    //   total: newTimeout || state.remaining || timeout,
-    // });
+    console.log('**startTimeout**', {
+      newTimeout,
+      timerId: timerId.current,
+      timeout,
+      currentTimeout: currentTimeout.current,
+    });
     clearTimeout(timerId.current);
     timerId.current = setTimeout(setIdle, newTimeout || currentTimeout.current);
   }
@@ -371,153 +372,8 @@ export function useIdleMonitor(): IdleMonitorContext {
 IdleMonitor.propTypes = {
   timeout: PropTypes.number,
   events: PropTypes.arrayOf(PropTypes.string),
-  children: PropTypes.element.isRequired,
+  children: PropTypes.node.isRequired,
   enabled: PropTypes.bool,
   activeClassName: PropTypes.string,
   idleClassName: PropTypes.string,
 };
-
-function FireEvents({
-  onRun,
-  onStop,
-  onIdle,
-  onActive,
-}: {
-  onRun: ({ startTime, now }: { startTime: number; now: number }) => void;
-  onStop: ({ startTime, now }: { startTime: number; now: number }) => void;
-  onIdle: ({ startTime, now }: { startTime: number; now: number }) => void;
-  onActive: ({
-    startTime,
-    now,
-    preventActive,
-  }: {
-    startTime: number;
-    now: number;
-    preventActive: () => void;
-  }) => void;
-}): null {
-  const {
-    isRunning,
-    isIdle,
-    startTime,
-    activate,
-    remaining,
-  } = useIdleMonitor();
-
-  useEffect(() => {
-    const payload = {
-      startTime,
-      now: Date.now(),
-    };
-    if (isRunning) {
-      onRun(payload);
-    } else {
-      onStop(payload);
-    }
-  }, [isRunning]);
-
-  function preventActive(): void {
-    activate(remaining);
-  }
-
-  useEffect(() => {
-    const payload = {
-      startTime,
-      now: Date.now(),
-    };
-    if (isIdle) {
-      onIdle(payload);
-    } else {
-      onActive({ ...payload, preventActive });
-    }
-  }, [isIdle]);
-  return null;
-}
-
-export function IdleMonitorEvents({
-  onRun,
-  onStop,
-  onIdle,
-  onActive,
-  children,
-  ...props
-}: IdleMonitorProps & {
-  onRun: ({ startTime, now }: { startTime: number; now: number }) => void;
-  onStop: ({ startTime, now }: { startTime: number; now: number }) => void;
-  onIdle: ({ startTime, now }: { startTime: number; now: number }) => void;
-  onActive: ({
-    startTime,
-    now,
-    preventActive,
-  }: {
-    startTime: number;
-    now: number;
-    preventActive: () => void;
-  }) => void;
-}): JSX.Element {
-  return (
-    <IdleMonitor {...props}>
-      <FireEvents
-        onRun={onRun}
-        onStop={onStop}
-        onIdle={onIdle}
-        onActive={onActive}
-      />
-      {children}
-    </IdleMonitor>
-  );
-}
-
-function DispatchEvents({
-  reduxActionPrefix,
-  dispatch,
-}: {
-  reduxActionPrefix: string;
-  dispatch: (action: object) => void;
-}): null {
-  const { isRunning, isIdle, startTime } = useIdleMonitor();
-
-  useEffect(() => {
-    const payload = {
-      startTime,
-      now: Date.now(),
-    };
-    dispatch({
-      type: `${reduxActionPrefix}_${isRunning ? 'run' : 'stop'}`,
-      ...payload,
-    });
-  }, [isRunning]);
-
-  useEffect(() => {
-    const payload = {
-      startTime,
-      now: Date.now(),
-    };
-    dispatch({
-      type: `${reduxActionPrefix}_${isIdle ? 'idle' : 'active'}`,
-      ...payload,
-    });
-  }, [isIdle]);
-
-  return null;
-}
-
-export function IdleMonitorRedux({
-  reduxActionPrefix,
-  dispatch,
-  children,
-  ...props
-}: IdleMonitorProps & {
-  reduxActionPrefix: string;
-  dispatch: (action: object) => void;
-}): JSX.Element {
-  return (
-    <IdleMonitor {...props}>
-      <DispatchEvents
-        reduxActionPrefix={reduxActionPrefix}
-        dispatch={dispatch}
-      />
-      {children}
-    </IdleMonitor>
-  );
-}
