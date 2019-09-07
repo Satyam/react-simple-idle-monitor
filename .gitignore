@@ -39,3 +39,6 @@ jspm_packages
 # Parcel cache
 examples/dist
 examples/cache
+
+# no need to store the build files and declarations in GitHub
+lib
