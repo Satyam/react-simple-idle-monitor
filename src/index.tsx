@@ -45,13 +45,6 @@ type IdleMonitorContext = {
   startTime: number;
 
   /**
-   * The number of milliseconds remaining to reach the idle state.
-   * It will not be updated continuously, as that would be a drag on resources.
-   * It will only change when the status (`isIdle`, `isRunning`) changes.
-   */
-  remaining: number;
-
-  /**
    * If `isIdle==true`, it will switch to not-idle (active).
    * If already active, it will re-start the timeout counter
    * with the given timeout or the default set in the `timeout` property.
@@ -85,7 +78,6 @@ const initialContextValues = {
   isRunning: false,
   timeout: 0,
   startTime: 0,
-  remaining: 0,
   activate: notReady,
   run: notReady,
   stop: notReady,
@@ -186,7 +178,6 @@ const IdleMonitor = ({
           isIdle: false,
           isRunning: true,
           startTime: Date.now(),
-          remaining: currentTimeout.current,
           timeout: currentTimeout.current,
         };
       case Action.Stop:
@@ -194,20 +185,17 @@ const IdleMonitor = ({
           ...state,
           isIdle: false,
           isRunning: false,
-          remaining: currentTimeout.current - (Date.now() - state.startTime),
         };
       case Action.Idle:
         return {
           ...state,
           isIdle: true,
-          remaining: 0,
         };
       case Action.Active:
         return {
           ...state,
           isIdle: false,
           startTime: Date.now(),
-          remaining: action.timeout,
           timeout: action.timeout,
         };
       default:
@@ -274,7 +262,7 @@ const IdleMonitor = ({
     const [pageX, pageY] = pageXY.current;
 
     // If not enabled, ignore events
-    if (!state.isRunning) return;
+    if (!state.isRunning || !state.isIdle) return;
     /*
           The following is taken verbatim from
           https://github.com/SupremeTechnopriest/react-idle-timer/blob/master/src/index.js
