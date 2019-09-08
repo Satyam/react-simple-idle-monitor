@@ -17,13 +17,7 @@ type FireEventsType = {
 };
 
 function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
-  const {
-    isRunning,
-    isIdle,
-    startTime,
-    activate,
-    remaining,
-  } = useIdleMonitor();
+  const { isRunning, isIdle, startTime, activate } = useIdleMonitor();
   const isMounted = useRef(false);
   useEffect(() => {
     if (!isMounted.current) return;
@@ -39,7 +33,7 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
   }, [isRunning]);
 
   function preventActive(): void {
-    activate(remaining);
+    activate();
   }
 
   useEffect(() => {
