@@ -11,13 +11,13 @@
     "test": "jest",
     "lint": "eslint --ext .jsx,.js,.tsx,.ts ./src",
     "build": "babel src -d lib -x .tsx",
-    "preversion": "npm test && eslint --ext .jsx,.js,.tsx .",
-    "version": "npm run build && git add index.js",
+    "preversion": "npm test && npm run lint",
+    "version": "npm run build && npm run declarations",
     "postversion": "git push && git push --tags",
-    "prettier": "prettier --write ./src/index.tsx ./__tests__/index.jsx",
+    "prettier": "prettier --write ./src/*.tsx ./__tests__/index.tsx",
     "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "declarations": "tsc --emitDeclarationOnly",
-    "example": "parcel examples/index.html --out-dir examples/dist --cache-dir examples/cache"
+    "examples": "npm run build && parcel examples/index.html --out-dir examples/dist --cache-dir examples/cache"
   },
   "repository": {
     "type": "git",
