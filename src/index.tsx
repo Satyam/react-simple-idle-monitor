@@ -219,14 +219,14 @@ const IdleMonitor = ({
   const hasClassName = !!(activeClassName || idleClassName);
 
   function run(newTimeout?: number): void {
-    console.log('**run**', { newTimeout });
+    // console.log('**run**', { newTimeout });
     currentTimeout.current = newTimeout || timeout;
     dispatch({ type: Action.Run });
     startTimeout();
   }
 
   function stop(): void {
-    console.log('**stop**', { timerId: timerId.current });
+    // console.log('**stop**', { timerId: timerId.current });
     clearTimeout(timerId.current);
     dispatch({
       type: Action.Stop,
@@ -234,13 +234,13 @@ const IdleMonitor = ({
   }
 
   function setIdle(): void {
-    console.log('**Idle**', { hasClassName, idleClassName });
+    // console.log('**Idle**', { hasClassName, idleClassName });
     dispatch({ type: Action.Idle });
     if (hasClassName) setClassName(idleClassName);
   }
 
   function setActive(newTimeout?: number): void {
-    console.log('**setActive**', { newTimeout, hasClassName });
+    // console.log('**setActive**', { newTimeout, hasClassName });
     dispatch({
       type: Action.Active,
       timeout: newTimeout || currentTimeout.current,
@@ -250,7 +250,7 @@ const IdleMonitor = ({
   }
 
   function activate(newTimeout?: number | false): void {
-    console.log('**activate**', { newTimeout });
+    // console.log('**activate**', { newTimeout });
     if (newTimeout === false) {
       setIdle();
     } else {
@@ -287,10 +287,10 @@ const IdleMonitor = ({
 
   useEffect(() => {
     if (!isMounted.current) return;
-    console.log('useEffect enabled', {
-      enabled,
-      state,
-    });
+    // console.log('useEffect enabled', {
+    //   enabled,
+    //   state,
+    // });
     if (enabled) {
       if (!state.isRunning) run();
     } else if (state.isRunning) stop();
@@ -298,15 +298,15 @@ const IdleMonitor = ({
 
   useEffect(() => {
     if (!isMounted.current) return;
-    console.log('useEffect timeout', {
-      timeout,
-    });
+    // console.log('useEffect timeout', {
+    //   timeout,
+    // });
     currentTimeout.current = timeout;
     startTimeout();
   }, [timeout]);
 
   useEffect(() => {
-    console.log('useEffect init', { enabled, timeout, state });
+    // console.log('useEffect init', { enabled, timeout, state });
     if (enabled) {
       run();
     } else {
@@ -314,18 +314,18 @@ const IdleMonitor = ({
     }
     isMounted.current = true;
     return (): void => {
-      console.log('useEffect unmount', state);
+      // console.log('useEffect unmount', state);
       if (state.isRunning) stop();
     };
   }, []);
 
   function startTimeout(newTimeout?: number): void {
-    console.log('**startTimeout**', {
-      newTimeout,
-      timerId: timerId.current,
-      timeout,
-      currentTimeout: currentTimeout.current,
-    });
+    // console.log('**startTimeout**', {
+    //   newTimeout,
+    //   timerId: timerId.current,
+    //   timeout,
+    //   currentTimeout: currentTimeout.current,
+    // });
     clearTimeout(timerId.current);
     timerId.current = setTimeout(setIdle, newTimeout || currentTimeout.current);
   }
