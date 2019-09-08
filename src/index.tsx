@@ -162,8 +162,8 @@ const IdleMonitor = ({
   ],
   children,
   enabled = true,
-  activeClassName = '',
-  idleClassName = '',
+  activeClassName,
+  idleClassName,
 }: IdleMonitorProps): JSX.Element => {
   const currentTimeout = useRef<number>(timeout);
 
