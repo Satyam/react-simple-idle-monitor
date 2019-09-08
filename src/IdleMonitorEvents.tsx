@@ -5,19 +5,11 @@ type FireEventsType = {
   onRun?: ({ startTime, now }: { startTime: number; now: number }) => void;
   onStop?: ({ startTime, now }: { startTime: number; now: number }) => void;
   onIdle?: ({ startTime, now }: { startTime: number; now: number }) => void;
-  onActive?: ({
-    startTime,
-    now,
-    preventActive,
-  }: {
-    startTime: number;
-    now: number;
-    preventActive: () => void;
-  }) => void;
+  onActive?: ({ startTime, now }: { startTime: number; now: number }) => void;
 };
 
 function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
-  const { isRunning, isIdle, startTime, activate } = useIdleMonitor();
+  const { isRunning, isIdle, startTime } = useIdleMonitor();
   const isMounted = useRef(false);
   useEffect(() => {
     if (!isMounted.current) return;
@@ -32,10 +24,6 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
     }
   }, [isRunning]);
 
-  function preventActive(): void {
-    activate();
-  }
-
   useEffect(() => {
     if (!isMounted.current) return;
     const payload = {
@@ -45,8 +33,7 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
     if (isIdle) {
       if (typeof onIdle == 'function') onIdle(payload);
     } else {
-      if (typeof onActive == 'function')
-        onActive({ ...payload, preventActive });
+      if (typeof onActive == 'function') onActive(payload);
     }
   }, [isIdle]);
 
