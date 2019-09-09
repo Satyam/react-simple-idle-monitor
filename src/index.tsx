@@ -227,7 +227,7 @@ const IdleMonitor = ({
 
   function stop(): void {
     // console.log('**stop**', { timerId: timerId.current });
-    clearTimeout(timerId.current);
+    cancelTimeout();
     dispatch({
       type: Action.Stop,
     });
@@ -315,9 +315,16 @@ const IdleMonitor = ({
     isMounted.current = true;
     return (): void => {
       // console.log('useEffect unmount', state);
-      if (state.isRunning) stop();
+      stop();
     };
   }, []);
+
+  function cancelTimeout(): void {
+    if (timerId.current) {
+      clearTimeout(timerId.current);
+      timerId.current = 0;
+    }
+  }
 
   function startTimeout(newTimeout?: number): void {
     // console.log('**startTimeout**', {
@@ -326,7 +333,7 @@ const IdleMonitor = ({
     //   timeout,
     //   currentTimeout: currentTimeout.current,
     // });
-    clearTimeout(timerId.current);
+    cancelTimeout;
     timerId.current = setTimeout(setIdle, newTimeout || currentTimeout.current);
   }
 
