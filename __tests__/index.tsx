@@ -10,6 +10,10 @@ declare var global; // for the server rendering further down.
 jest.useFakeTimers();
 
 const EPOCH = 123000000;
+const TIMEOUT = 1000 * 60 * 20;
+const LONG_TIME = 100000000;
+const SECOND = 1000;
+const HALF_SECOND = SECOND / 2;
 
 let now = EPOCH;
 
@@ -21,11 +25,11 @@ beforeEach(() => {
 function advanceTimers(ms) {
   now += ms;
   Date.now = () => now;
-  jest.advanceTimersByTime(ms);
+  act(() => jest.advanceTimersByTime(ms));
 }
 
 function afterASecond() {
-  now += 1000;
+  now += SECOND;
   Date.now = () => now;
 }
 
@@ -37,6 +41,7 @@ declare global {
     }
   }
 }
+
 expect.extend({
   toBeActive: received => {
     const pass =
@@ -45,12 +50,13 @@ expect.extend({
     if (pass) {
       return {
         message: () =>
-          `expected ${received} not to have the 'active' className`,
+          `expected ${received.innerHTML} not to have the 'active' className`,
         pass: true,
       };
     } else {
       return {
-        message: () => `expected ${received} to have the 'active' className`,
+        message: () =>
+          `expected ${received.innerHTML} to have the 'active' className`,
         pass: false,
       };
     }
@@ -61,17 +67,20 @@ expect.extend({
       received.querySelectorAll('div.idle').length === 1;
     if (pass) {
       return {
-        message: () => `expected ${received} not to have the 'idle' className`,
+        message: () =>
+          `expected ${received.innerHTML} not to have the 'idle' className`,
         pass: true,
       };
     } else {
       return {
-        message: () => `expected ${received} to have the 'idle' className`,
+        message: () =>
+          `expected ${received.innerHTML} to have the 'idle' className`,
         pass: false,
       };
     }
   },
 });
+
 describe('IdleMonitor from react-simple-idle-monitor', () => {
   describe('Checking changing active and idle classnames', () => {
     describe('Initial rendering', () => {
@@ -177,7 +186,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
         // But it doesn't fail if you forget (TypeScript would warn you)
         // @ts-ignore
         const { container } = render(<IdleMonitor />);
-        act(() => jest.runAllTimers());
+        advanceTimers(LONG_TIME);
 
         // With no children, nothing much would happen
         expect(container.firstChild).toMatchInlineSnapshot(`<div />`);
@@ -185,7 +194,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
 
       test('with children and no properties', () => {
         const { container } = render(<IdleMonitor>Hello</IdleMonitor>);
-        act(() => jest.runAllTimers());
+        advanceTimers(LONG_TIME);
 
         // Nothing special would happen anyway
         expect(container.firstChild).toMatchInlineSnapshot(`
@@ -211,7 +220,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
           Hello
         </div>
       `);
-        act(() => jest.runAllTimers());
+        advanceTimers(LONG_TIME);
 
         // Then it should switch to idle
         expect(container).toBeIdle();
@@ -251,16 +260,16 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
       expect(container).toBeActive();
 
       // Enough time to trigger the timer in Wrap, not the idle timer.
-      act(() => advanceTimers(15000));
+      advanceTimers(15000);
 
       expect(container).toBeActive();
 
       // enough extra time to trigger old timeout, but not the new one
-      act(() => advanceTimers(10000));
+      advanceTimers(10000);
 
       expect(container).toBeActive();
 
-      act(() => jest.runAllTimers());
+      advanceTimers(LONG_TIME);
       expect(container).toBeIdle();
     });
   });

@@ -10,6 +10,10 @@ declare var global;
 jest.useFakeTimers();
 
 const EPOCH = 123000000;
+const TIMEOUT = 1000 * 60 * 20;
+const LONG_TIME = 100000000;
+const SECOND = 1000;
+const HALF_SECOND = SECOND / 2;
 
 let now = EPOCH;
 
@@ -21,13 +25,19 @@ beforeEach(() => {
 function advanceTimers(ms) {
   now += ms;
   Date.now = () => now;
-  jest.advanceTimersByTime(ms);
+  act(() => jest.advanceTimersByTime(ms));
 }
 
 function afterASecond() {
-  now += 1000;
+  now += SECOND;
   Date.now = () => now;
 }
+
+const PREFIX = 'redux_action';
+const ACTION_RUN = `${PREFIX}_run`;
+const ACTION_IDLE = `${PREFIX}_idle`;
+const ACTION_ACTIVE = `${PREFIX}_active`;
+const ACTION_STOP = `${PREFIX}_stop`;
 
 describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
   describe('Redux actions dispatched', () => {
@@ -35,90 +45,79 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
       const dispatch = jest.fn();
       render(
         <div>
-          <IdleMonitorRedux
-            dispatch={dispatch}
-            reduxActionPrefix="redux_action"
-          >
+          <IdleMonitorRedux dispatch={dispatch} reduxActionPrefix={PREFIX}>
             Hello
           </IdleMonitorRedux>
         </div>
       );
       expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toMatchInlineSnapshot(`
-        Object {
-          "now": 123000000,
-          "startTime": 123000000,
-          "type": "redux_action_run",
-        }
-      `);
+      expect(dispatch.mock.calls[0][0]).toEqual({
+        now: EPOCH,
+        startTime: EPOCH,
+        type: ACTION_RUN,
+      });
     });
 
     test('`_idle` action should be dispatched after timeout', () => {
       const dispatch = jest.fn();
       render(
         <div>
-          <IdleMonitorRedux
-            dispatch={dispatch}
-            reduxActionPrefix="redux_action"
-          >
+          <IdleMonitorRedux dispatch={dispatch} reduxActionPrefix={PREFIX}>
             Hello
           </IdleMonitorRedux>
         </div>
       );
+
+      // Clearing the _run actions
       dispatch.mockClear();
-      afterASecond();
-      act(() => jest.runAllTimers());
+
+      advanceTimers(LONG_TIME);
+
       expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toMatchInlineSnapshot(`
-        Object {
-          "now": 123001000,
-          "startTime": 123000000,
-          "type": "redux_action_idle",
-        }
-      `);
+      expect(dispatch.mock.calls[0][0]).toEqual({
+        now: EPOCH + LONG_TIME,
+        startTime: EPOCH,
+        type: ACTION_IDLE,
+      });
     });
 
     test('`_active` action should be dispatched after UI event', () => {
       const dispatch = jest.fn();
       const { getByText } = render(
         <div>
-          <IdleMonitorRedux
-            dispatch={dispatch}
-            reduxActionPrefix="redux_action"
-          >
+          <IdleMonitorRedux dispatch={dispatch} reduxActionPrefix={PREFIX}>
             Hello
           </IdleMonitorRedux>
         </div>
       );
-      act(() => jest.runAllTimers());
+
+      advanceTimers(LONG_TIME);
+
+      // Clearing the _run and _idle actions
       dispatch.mockClear();
-      afterASecond();
+
       fireEvent.keyDown(getByText('Hello'), { key: 'Enter', code: 13 });
 
       expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toMatchInlineSnapshot(`
-        Object {
-          "now": 123001000,
-          "startTime": 123001000,
-          "type": "redux_action_active",
-        }
-      `);
+      expect(dispatch.mock.calls[0][0]).toEqual({
+        now: EPOCH + LONG_TIME,
+        startTime: EPOCH + LONG_TIME,
+        type: ACTION_ACTIVE,
+      });
     });
 
     test('it should not dispatch anything after UI event if not idle first', () => {
       const dispatch = jest.fn();
       const { getByText } = render(
         <div>
-          <IdleMonitorRedux
-            dispatch={dispatch}
-            reduxActionPrefix="redux_action"
-          >
+          <IdleMonitorRedux dispatch={dispatch} reduxActionPrefix={PREFIX}>
             Hello
           </IdleMonitorRedux>
         </div>
       );
-      dispatch.mockClear();
 
+      // Clearing the _run action
+      dispatch.mockClear();
       fireEvent.keyDown(getByText('Hello'), { key: 'Enter', code: 13 });
 
       expect(dispatch).not.toHaveBeenCalled();
@@ -132,14 +131,10 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         useEffect(() => {
           setTimeout(() => {
             setMounted(false);
-          }, 10000);
+          }, HALF_SECOND);
         });
         return mounted ? (
-          <IdleMonitorRedux
-            activeClassName="active"
-            dispatch={dispatch}
-            reduxActionPrefix="redux_action"
-          >
+          <IdleMonitorRedux dispatch={dispatch} reduxActionPrefix={PREFIX}>
             Hello
           </IdleMonitorRedux>
         ) : (
@@ -147,35 +142,25 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         );
       }
 
-      const { container } = render(<Wrap2 />);
+      expect(dispatch).toHaveBeenCalled();
+      expect(dispatch.mock.calls[0][0]).toEqual({
+        now: EPOCH,
+        startTime: EPOCH,
+        type: ACTION_RUN,
+      });
 
-      expect(container.firstChild).toMatchInlineSnapshot(`
-        <div
-          class="active"
-        >
-          Hello
-        </div>
-      `);
-      expect(dispatch.mock.calls[0][0]).toMatchInlineSnapshot(`
-        Object {
-          "now": 123000000,
-          "startTime": 123000000,
-          "type": "redux_action_run",
-        }
-      `);
-
+      // clear the _run action
       dispatch.mockClear();
 
       // Enough time to trigger the timer in Wrap2, not the idle timer.
-      act(() => advanceTimers(20000));
+      advanceTimers(SECOND);
 
-      expect(container.firstChild).toMatchInlineSnapshot(`
-        <p>
-          Hello
-        </p>
-      `);
       expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toMatchInlineSnapshot();
+      expect(dispatch.mock.calls[0][0]).toEqual({
+        now: EPOCH,
+        startTime: EPOCH,
+        type: ACTION_RUN,
+      });
     });
 
     test('`_stop` action should be dispatched when disabled', () => {
@@ -186,151 +171,84 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         useEffect(() => {
           setTimeout(() => {
             setEnabled(false);
-          }, 10000);
+          }, HALF_SECOND);
         });
         return (
           <IdleMonitorRedux
-            activeClassName="active"
-            idleClassName="idle"
             dispatch={dispatch}
-            reduxActionPrefix="redux_action"
+            reduxActionPrefix={PREFIX}
             enabled={enabled}
           >
             Hello
           </IdleMonitorRedux>
         );
       }
-      const { container, getByText } = render(<Wrap3 />);
+
+      const { getByText } = render(<Wrap3 />);
+
+      // clear the run
       dispatch.mockClear();
 
-      act(() => advanceTimers(20000));
-
-      expect(container.firstChild).toMatchInlineSnapshot(`
-        <div
-          class="active"
-        >
-          Hello
-        </div>
-      `);
+      advanceTimers(SECOND);
 
       expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toMatchInlineSnapshot(`
-        Object {
-          "now": 123020000,
-          "startTime": 123000000,
-          "type": "redux_action_stop",
-        }
-      `);
+      expect(dispatch.mock.calls[0][0]).toEqual({
+        now: EPOCH + SECOND,
+        startTime: EPOCH,
+        type: ACTION_STOP,
+      });
 
       // Nothing else should be dispatched while disabled
       dispatch.mockClear();
-      act(() => jest.runAllTimers());
+      advanceTimers(LONG_TIME);
       expect(dispatch).not.toHaveBeenCalled();
+
       fireEvent.keyDown(getByText('Hello'), { key: 'Enter', code: 13 });
       expect(dispatch).not.toHaveBeenCalled();
     });
 
     test('`_stop` action should be dispatched when started disabled', () => {
       const dispatch = jest.fn();
-      const Wrap4x = class extends Component {
-        constructor(props) {
-          super(props);
-          this.enabled = false;
-          setTimeout(() => {
-            this.enabled = true;
-            this.forceUpdate();
-          }, 10000);
-        }
-        enabled: boolean;
-
-        render() {
-          return (
-            <IdleMonitorRedux
-              dispatch={dispatch}
-              reduxActionPrefix="redux_action"
-              enabled={this.enabled}
-            >
-              Hello
-            </IdleMonitorRedux>
-          );
-        }
-      };
       function Wrap4() {
         const [enabled, setEnabled] = useState(false);
         useEffect(() => {
           setTimeout(() => {
             setEnabled(true);
-          }, 10000);
+          }, HALF_SECOND);
         });
         return (
           <IdleMonitorRedux
-            activeClassName="active"
-            idleClassName="idle"
             dispatch={dispatch}
-            reduxActionPrefix="redux_action"
+            reduxActionPrefix={PREFIX}
             enabled={enabled}
           >
             Hello
           </IdleMonitorRedux>
         );
       }
-      const { container } = render(<Wrap4 />);
-      expect(container.firstChild).toMatchInlineSnapshot(`
-        <div
-          class="active"
-        >
-          Hello
-        </div>
-      `);
-      expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toMatchInlineSnapshot();
-
+      render(<Wrap4 />);
+      // The _run action should not be called
       dispatch.mockClear();
-      act(() => advanceTimers(20000));
+      advanceTimers(SECOND);
 
-      expect(container.firstChild).toMatchInlineSnapshot();
       expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toMatchInlineSnapshot();
+      expect(dispatch.mock.calls[0][0]).toEqual({
+        now: EPOCH + SECOND,
+        startTime: EPOCH + SECOND,
+        type: ACTION_RUN,
+      });
 
       // It should resume normal operation
       dispatch.mockClear();
-      afterASecond();
-      act(() => jest.runAllTimers());
-      expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toMatchInlineSnapshot();
-    });
-  });
-  describe('using reactDOM/server', () => {
-    test('Using renderToString with no DOM', () => {
-      expect(global.document).toBeUndefined();
-      expect(
-        renderToString(
-          <IdleMonitorRedux
-            activeClassName="active"
-            idleClassName="idle"
-            reduxActionPrefix="redux_action"
-            dispatch={() => void 0}
-          >
-            Hello
-          </IdleMonitorRedux>
-        )
-      ).toMatchInlineSnapshot(`"<div class=\\"active\\">Hello</div>"`);
-    });
 
-    test('Using renderToStaticMarkup with no DOM', () => {
-      expect(global.document).toBeUndefined();
-      expect(
-        renderToStaticMarkup(
-          <IdleMonitorRedux
-            activeClassName="active"
-            idleClassName="idle"
-            reduxActionPrefix="redux_action"
-            dispatch={() => void 0}
-          >
-            Hello
-          </IdleMonitorRedux>
-        )
-      ).toMatchInlineSnapshot(`"<div class=\\"active\\">Hello</div>"`);
+      advanceTimers(LONG_TIME);
+
+      expect(dispatch).toHaveBeenCalled();
+      expect(dispatch.mock.calls[0][0]).toEqual({
+        now: EPOCH + SECOND + LONG_TIME,
+        startTime: EPOCH + SECOND,
+        type: ACTION_IDLE,
+      });
     });
   });
 });
