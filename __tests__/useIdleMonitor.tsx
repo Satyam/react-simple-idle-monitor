@@ -10,6 +10,8 @@ jest.useFakeTimers();
 const EPOCH = 123000000;
 const TIMEOUT = 1000 * 60 * 20;
 const LONG_TIME = 100000000;
+const SECOND = 1000;
+const HALF_SECOND = SECOND / 2;
 
 let now = EPOCH;
 
@@ -24,13 +26,8 @@ function advanceTimers(ms) {
   act(() => jest.advanceTimersByTime(ms));
 }
 
-function longTime() {
-  now += LONG_TIME;
-  Date.now = () => now;
-  act(() => jest.advanceTimersByTime(LONG_TIME));
-}
 function afterASecond() {
-  now += 1000;
+  now += SECOND;
   Date.now = () => now;
 }
 
@@ -45,9 +42,19 @@ function StatusForm({ isRunning, isIdle, timeout, startTime }) {
   );
 }
 
-function StatusConsumer({}) {
+function StatusConsumer() {
   const state = useIdleMonitor();
   return <StatusForm {...state} />;
+}
+
+function StatusLogger() {
+  const { isRunning, isIdle, timeout, startTime } = useIdleMonitor();
+  const [log, setLog] = useState([]);
+
+  useEffect(() => {
+    setLog(l => [...l, { isRunning, isIdle, timeout, startTime, now }]);
+  }, [isRunning, isIdle, timeout, startTime]);
+  return <div data-testid="log">{JSON.stringify(log, null, 2)}</div>;
 }
 
 describe('useIdleMonitor from react-simple-idle-monitor', () => {
@@ -121,7 +128,7 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
         </IdleMonitor>
       );
 
-      longTime();
+      advanceTimers(LONG_TIME);
 
       expect(getByTestId('status')).toHaveFormValues({
         isRunning: true,
@@ -161,6 +168,270 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
         isIdle: false,
         timeout: TIMEOUT,
         startTime: EPOCH,
+      });
+    });
+  });
+  describe('trying out some logging', () => {
+    test('with no properties', () => {
+      const { getByTestId } = render(
+        <IdleMonitor>
+          <StatusLogger />
+        </IdleMonitor>
+      );
+      expect(getByTestId('log').firstChild).toMatchInlineSnapshot(`
+        [
+          {
+            "isRunning": false,
+            "isIdle": false,
+            "timeout": 0,
+            "startTime": 0,
+            "now": 123000000
+          },
+          {
+            "isRunning": true,
+            "isIdle": false,
+            "timeout": 1200000,
+            "startTime": 123000000,
+            "now": 123000000
+          }
+        ]
+      `);
+    });
+    test('let it go idle', () => {
+      const { getByTestId } = render(
+        <IdleMonitor>
+          <StatusLogger />
+        </IdleMonitor>
+      );
+      advanceTimers(LONG_TIME);
+      expect(getByTestId('log').firstChild).toMatchInlineSnapshot(`
+        [
+          {
+            "isRunning": false,
+            "isIdle": false,
+            "timeout": 0,
+            "startTime": 0,
+            "now": 123000000
+          },
+          {
+            "isRunning": true,
+            "isIdle": false,
+            "timeout": 1200000,
+            "startTime": 123000000,
+            "now": 123000000
+          },
+          {
+            "isRunning": true,
+            "isIdle": true,
+            "timeout": 1200000,
+            "startTime": 123000000,
+            "now": 223000000
+          }
+        ]
+      `);
+    });
+
+    test('let it go idle and then active again', () => {
+      const { getByTestId, getByText } = render(
+        <IdleMonitor>
+          <StatusLogger />
+          <p>Hello</p>
+        </IdleMonitor>
+      );
+      advanceTimers(LONG_TIME);
+      afterASecond();
+      fireEvent.keyDown(getByText('Hello'), { key: 'Enter', code: 13 });
+      expect(getByTestId('log').firstChild).toMatchInlineSnapshot(`
+        [
+          {
+            "isRunning": false,
+            "isIdle": false,
+            "timeout": 0,
+            "startTime": 0,
+            "now": 123000000
+          },
+          {
+            "isRunning": true,
+            "isIdle": false,
+            "timeout": 1200000,
+            "startTime": 123000000,
+            "now": 123000000
+          },
+          {
+            "isRunning": true,
+            "isIdle": true,
+            "timeout": 1200000,
+            "startTime": 123000000,
+            "now": 223000000
+          },
+          {
+            "isRunning": true,
+            "isIdle": false,
+            "timeout": 1200000,
+            "startTime": 223001000,
+            "now": 223001000
+          }
+        ]
+      `);
+    });
+  });
+
+  describe('Functions', () => {
+    test('activate(false)', () => {
+      function ActivateFalse() {
+        const { activate } = useIdleMonitor();
+        useEffect(() => {
+          setTimeout(() => {
+            now += HALF_SECOND;
+            act(() => activate(false));
+          }, HALF_SECOND); // less than a second
+        }, []);
+        return null;
+      }
+      const { getByTestId } = render(
+        <IdleMonitor>
+          <StatusConsumer />
+          <ActivateFalse />
+        </IdleMonitor>
+      );
+
+      advanceTimers(SECOND);
+
+      expect(getByTestId('status')).toHaveFormValues({
+        isRunning: true,
+        // Should become idle
+        isIdle: true,
+        timeout: 1200000,
+        startTime: 123000000,
+      });
+    });
+
+    test('activate(undefined)', () => {
+      function Activate() {
+        const { activate } = useIdleMonitor();
+        useEffect(() => {
+          setTimeout(() => {
+            act(() => activate());
+          }, LONG_TIME + HALF_SECOND);
+        }, []);
+        return null;
+      }
+      const { getByTestId } = render(
+        <IdleMonitor>
+          <StatusConsumer />
+          <Activate />
+        </IdleMonitor>
+      );
+      advanceTimers(LONG_TIME);
+
+      expect(getByTestId('status')).toHaveFormValues({
+        isRunning: true,
+        // Should become idle
+        isIdle: true,
+        timeout: TIMEOUT,
+        startTime: EPOCH,
+      });
+
+      advanceTimers(SECOND);
+
+      expect(getByTestId('status')).toHaveFormValues({
+        isRunning: true,
+        // Should become active
+        isIdle: false,
+        timeout: TIMEOUT,
+        // With real timers it would have been
+        //   startTime: EPOCH + LONG_TIME + HALF_SECOND
+        // but with fake timers, they jump when you advance them
+        // skipping in betweens.
+        startTime: EPOCH + LONG_TIME + SECOND,
+      });
+    });
+    test('activate(SECOND)', () => {
+      function Activate() {
+        const { activate } = useIdleMonitor();
+        useEffect(() => {
+          setTimeout(() => {
+            act(() => activate(SECOND));
+          }, LONG_TIME + HALF_SECOND);
+        }, []);
+        return null;
+      }
+      const { getByTestId } = render(
+        <IdleMonitor>
+          <StatusConsumer />
+          <Activate />
+        </IdleMonitor>
+      );
+      advanceTimers(LONG_TIME);
+
+      expect(getByTestId('status')).toHaveFormValues({
+        isRunning: true,
+        // Should become idle
+        isIdle: true,
+        timeout: TIMEOUT,
+        startTime: EPOCH,
+      });
+
+      advanceTimers(SECOND);
+
+      expect(getByTestId('status')).toHaveFormValues({
+        isRunning: true,
+        // Should become active
+        isIdle: false,
+        // It should run for just a second:
+        timeout: SECOND,
+        // With real timers it would have been
+        //   startTime: EPOCH + LONG_TIME + HALF_SECOND
+        // but with fake timers, they jump when you advance them
+        // skipping in betweens.
+        startTime: EPOCH + LONG_TIME + SECOND,
+      });
+    });
+
+    test('Stop and restart', () => {
+      function StopStart() {
+        const { run, stop } = useIdleMonitor();
+        useEffect(() => {
+          setTimeout(() => {
+            act(() => stop());
+          }, HALF_SECOND);
+          setTimeout(() => {
+            act(() => run());
+          }, SECOND + HALF_SECOND);
+        }, []);
+        return null;
+      }
+      const { getByTestId } = render(
+        <IdleMonitor>
+          <StatusConsumer />
+          <StopStart />
+        </IdleMonitor>
+      );
+
+      advanceTimers(SECOND);
+
+      expect(getByTestId('status')).toHaveFormValues({
+        // Should have stopped
+        isRunning: false,
+        // Always turns active when stopped
+        isIdle: false,
+        timeout: TIMEOUT,
+        startTime: EPOCH,
+      });
+
+      advanceTimers(SECOND);
+
+      expect(getByTestId('status')).toHaveFormValues({
+        // Back to running
+        isRunning: true,
+        // Always start active
+        isIdle: false,
+        timeout: TIMEOUT,
+        // With real timers it would have been
+        //   startTime: EPOCH + SECOND + HALF_SECOND
+        // but with fake timers, they jump when you advance them
+        // skipping in betweens.
+        startTime: EPOCH + SECOND + SECOND,
       });
     });
   });
