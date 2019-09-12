@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "lint": "eslint --ext .jsx,.js,.tsx,.ts ./src",
+    "lint": "eslint --ext .jsx,.js,.tsx,.ts ./src ./__tests__",
     "build": "babel src -d lib -x .tsx",
     "preversion": "npm test && npm run lint",
     "version": "npm run build && npm run declarations",
@@ -36,97 +36,6 @@
     "url": "https://github.com/Satyam/react-simple-idle-monitor/issues"
   },
   "homepage": "https://github.com/Satyam/react-simple-idle-monitor#readme",
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "jsx",
-      "ts",
-      "tsx"
-    ],
-    "coverageDirectory": "<rootDir>/coverage",
-    "coverageReporters": [
-      "html",
-      "text"
-    ],
-    "setupFiles": [
-      "<rootDir>/node_modules/regenerator-runtime/runtime"
-    ]
-  },
-  "babel": {
-    "presets": [
-      [
-        "@babel/preset-env",
-        {
-          "targets": "> 0.25%, not dead"
-        }
-      ],
-      "@babel/preset-react",
-      [
-        "@babel/preset-typescript",
-        {
-          "isTSX": true,
-          "allExtensions": true
-        }
-      ]
-    ]
-  },
-  "eslintConfig": {
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint",
-      "react-hooks"
-    ],
-    "parserOptions": {
-      "ecmaFeatures": {
-        "jsx": true
-      },
-      "useJSXTextNode": true,
-      "project": "./tsconfig.json"
-    },
-    "settings": {
-      "react": {
-        "version": "16.8"
-      }
-    },
-    "extends": [
-      "eslint:recommended",
-      "plugin:react/recommended",
-      "plugin:@typescript-eslint/eslint-recommended",
-      "plugin:@typescript-eslint/recommended",
-      "plugin:@typescript-eslint/recommended-requiring-type-checking",
-      "plugin:@typescript-eslint/recommended",
-      "prettier",
-      "prettier/@typescript-eslint"
-    ],
-    "env": {
-      "node": true,
-      "jest": true,
-      "browser": true
-    },
-    "rules": {
-      "@typescript-eslint/no-use-before-define": [
-        "error",
-        "nofunc"
-      ],
-      "react/prop-types": "off",
-      "react/jsx-filename-extension": [
-        1,
-        {
-          "extensions": [
-            ".js",
-            ".jsx",
-            ".tsx"
-          ]
-        }
-      ]
-    }
-  },
-  "prettier": {
-    "trailingComma": "es5",
-    "tabWidth": 2,
-    "semi": true,
-    "singleQuote": true
-  },
   "peerDependencies": {
     "react": "^16.8.0"
   },
