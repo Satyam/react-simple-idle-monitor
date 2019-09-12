@@ -93,6 +93,7 @@ enum Action {
 type IdleMonitorActions =
   | {
       type: Action.Run;
+      timeout: number;
     }
   | {
       type: Action.Stop;
@@ -150,6 +151,52 @@ export const IdleMonitorContext = createContext<IdleMonitorContext>(
   initialContextValues
 );
 
+function reducer(
+  state: IdleMonitorContext,
+  action: IdleMonitorActions
+): IdleMonitorContext {
+  switch (action.type) {
+    case Action.Run:
+      return {
+        ...state,
+        isIdle: false,
+        isRunning: true,
+        startTime: Date.now(),
+        timeout: action.timeout,
+      };
+    case Action.Stop:
+      return {
+        ...state,
+        isIdle: false,
+        isRunning: false,
+      };
+    case Action.Idle:
+      return {
+        ...state,
+        isIdle: true,
+      };
+    case Action.Active:
+      return {
+        ...state,
+        isIdle: false,
+        startTime: Date.now(),
+        timeout: action.timeout,
+      };
+    default:
+      return state;
+  }
+}
+
+// const logReducer = (
+//   state: IdleMonitorContext,
+//   action: IdleMonitorActions
+// ): IdleMonitorContext => {
+//   console.log('----- before', state, action);
+//   const newState = reducer(state, action);
+//   console.log('----- after', newState);
+//   return newState;
+// };
+
 const IdleMonitor = ({
   timeout = 1000 * 60 * 20,
   events = [
@@ -165,44 +212,6 @@ const IdleMonitor = ({
   activeClassName,
   idleClassName,
 }: IdleMonitorProps): JSX.Element => {
-  const currentTimeout = useRef<number>(timeout);
-
-  function reducer(
-    state: IdleMonitorContext,
-    action: IdleMonitorActions
-  ): IdleMonitorContext {
-    switch (action.type) {
-      case Action.Run:
-        return {
-          ...state,
-          isIdle: false,
-          isRunning: true,
-          startTime: Date.now(),
-          timeout: currentTimeout.current,
-        };
-      case Action.Stop:
-        return {
-          ...state,
-          isIdle: false,
-          isRunning: false,
-        };
-      case Action.Idle:
-        return {
-          ...state,
-          isIdle: true,
-        };
-      case Action.Active:
-        return {
-          ...state,
-          isIdle: false,
-          startTime: Date.now(),
-          timeout: action.timeout,
-        };
-      default:
-        return state;
-    }
-  }
-
   const [state, dispatch] = useReducer(reducer, {
     ...initialContextValues,
     run,
@@ -212,6 +221,7 @@ const IdleMonitor = ({
 
   const [className, setClassName] = useState(activeClassName);
 
+  const currentTimeout = useRef<number>(timeout);
   const timerId = useRef<number>();
   const pageXY = useRef<[number, number]>([0, 0]);
   const isMounted = useRef<boolean>(false);
@@ -221,16 +231,17 @@ const IdleMonitor = ({
   function run(newTimeout?: number): void {
     // console.log('**run**', { newTimeout });
     currentTimeout.current = newTimeout || timeout;
-    dispatch({ type: Action.Run });
+    dispatch({ type: Action.Run, timeout: currentTimeout.current });
     startTimeout();
   }
 
   function stop(): void {
-    // console.log('**stop**', { timerId: timerId.current });
+    // console.log('**stop**, start', { timerId: timerId.current });
     cancelTimeout();
     dispatch({
       type: Action.Stop,
     });
+    // console.log('**stop** end');
   }
 
   function setIdle(): void {
@@ -287,18 +298,18 @@ const IdleMonitor = ({
 
   useEffect(() => {
     if (!isMounted.current) return;
-    // console.log('useEffect enabled', {
+    // console.log('useEffect for enabled', {
     //   enabled,
     //   state,
     // });
     if (enabled) {
-      if (!state.isRunning) run();
-    } else if (state.isRunning) stop();
-  }, [enabled]);
+      if (!state.isRunning) state.run();
+    } else if (state.isRunning) state.stop();
+  }, [enabled, state]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    // console.log('useEffect timeout', {
+    // console.log('useEffect for timeout', {
     //   timeout,
     // });
     currentTimeout.current = timeout;
@@ -314,12 +325,13 @@ const IdleMonitor = ({
     }
     isMounted.current = true;
     return (): void => {
-      // console.log('useEffect unmount', state);
+      isMounted.current = false;
       stop();
     };
   }, []);
 
   function cancelTimeout(): void {
+    // console.log('cancelTimeout', timerId.current);
     if (timerId.current) {
       clearTimeout(timerId.current);
       timerId.current = 0;
@@ -346,7 +358,7 @@ const IdleMonitor = ({
         }),
         {}
       ),
-    [events]
+    [events, onEventHandler]
   );
 
   return (

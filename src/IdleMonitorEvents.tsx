@@ -11,35 +11,63 @@ type FireEventsType = {
 function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
   const { isRunning, isIdle, startTime } = useIdleMonitor();
   const isMounted = useRef(false);
+  const st = useRef(startTime);
+
   useEffect(() => {
-    if (!isMounted.current) return;
-    const payload = {
-      startTime,
-      now: Date.now(),
-    };
-    if (isRunning) {
-      if (typeof onRun == 'function') onRun(payload);
-    } else {
-      if (typeof onStop == 'function') onStop(payload);
-    }
-  }, [isRunning]);
+    st.current = startTime;
+  }, [startTime]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    const payload = {
-      startTime,
-      now: Date.now(),
-    };
-    if (isIdle) {
-      if (typeof onIdle == 'function') onIdle(payload);
+    if (isRunning) {
+      /* istanbul ignore else */
+      if (typeof onRun == 'function')
+        onRun({
+          startTime: st.current,
+          now: Date.now(),
+        });
     } else {
-      if (typeof onActive == 'function') onActive(payload);
+      /* istanbul ignore else */
+      if (typeof onStop == 'function')
+        onStop({
+          startTime: st.current,
+          now: Date.now(),
+        });
     }
-  }, [isIdle]);
+  }, [isRunning, onRun, onStop]);
+
+  useEffect(() => {
+    if (!isMounted.current) return;
+    if (isIdle) {
+      /* istanbul ignore else */
+      if (typeof onIdle == 'function')
+        onIdle({
+          startTime: st.current,
+          now: Date.now(),
+        });
+    } else {
+      /* istanbul ignore else */
+      if (typeof onActive == 'function')
+        onActive({
+          startTime: st.current,
+          now: Date.now(),
+        });
+    }
+  }, [isIdle, onIdle, onActive]);
 
   useEffect(() => {
     isMounted.current = true;
-  }, []);
+    return (): void => {
+      isMounted.current = false;
+      /* istanbul ignore else */
+      if (typeof onStop === 'function') {
+        onStop({
+          startTime: st.current,
+          now: Date.now(),
+        });
+      }
+    };
+  }, [onStop]);
 
   return null;
 }
