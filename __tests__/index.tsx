@@ -5,34 +5,9 @@ import '@testing-library/jest-dom/extend-expect';
 
 import IdleMonitor from '../src/index';
 
+/* eslint-disable-next-line no-var */
 declare var global; // for the server rendering further down.
-
-jest.useFakeTimers();
-
-const EPOCH = 123000000;
-const TIMEOUT = 1000 * 60 * 20;
-const LONG_TIME = 100000000;
-const SECOND = 1000;
-const HALF_SECOND = SECOND / 2;
-
-let now = EPOCH;
-
-beforeEach(() => {
-  Date.now = () => EPOCH;
-  now = EPOCH;
-});
-
-function advanceTimers(ms) {
-  now += ms;
-  Date.now = () => now;
-  act(() => jest.advanceTimersByTime(ms));
-}
-
-function afterASecond() {
-  now += SECOND;
-  Date.now = () => now;
-}
-
+/* eslint "@typescript-eslint/no-namespace": 0 */
 declare global {
   namespace jest {
     interface Matchers<R> {
@@ -49,13 +24,13 @@ expect.extend({
       received.querySelectorAll('div.idle').length === 0;
     if (pass) {
       return {
-        message: () =>
+        message: (): string =>
           `expected ${received.innerHTML} not to have the 'active' className`,
         pass: true,
       };
     } else {
       return {
-        message: () =>
+        message: (): string =>
           `expected ${received.innerHTML} to have the 'active' className`,
         pass: false,
       };
@@ -67,19 +42,47 @@ expect.extend({
       received.querySelectorAll('div.idle').length === 1;
     if (pass) {
       return {
-        message: () =>
+        message: (): string =>
           `expected ${received.innerHTML} not to have the 'idle' className`,
         pass: true,
       };
     } else {
       return {
-        message: () =>
+        message: (): string =>
           `expected ${received.innerHTML} to have the 'idle' className`,
         pass: false,
       };
     }
   },
 });
+
+jest.useFakeTimers();
+
+const EPOCH = 123000000;
+const LONG_TIME = 100000000;
+const SECOND = 1000;
+
+let now = EPOCH;
+
+/* eslint-disable @typescript-eslint/unbound-method */
+beforeEach((): void => {
+  Date.now = (): number => EPOCH;
+  now = EPOCH;
+});
+
+function advanceTimers(ms): void {
+  now += ms;
+  Date.now = (): number => now;
+  act((): void => {
+    jest.advanceTimersByTime(ms);
+  });
+}
+
+function afterASecond(): void {
+  now += SECOND;
+  Date.now = (): number => now;
+}
+/* eslint-enable @typescript-eslint/unbound-method */
 
 describe('IdleMonitor from react-simple-idle-monitor', () => {
   describe('Checking changing active and idle classnames', () => {
@@ -238,7 +241,7 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
     });
 
     test('should restart timers when timeout changed', () => {
-      function Wrap1() {
+      function Wrap1(): JSX.Element {
         const [timeout, setTime] = useState(20000);
         useEffect(() => {
           setTimeout(() => {

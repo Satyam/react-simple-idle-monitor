@@ -1,37 +1,31 @@
-import React, { Component, useEffect, useState } from 'react';
-import { renderToString, renderToStaticMarkup } from 'react-dom/server';
+import React, { useEffect, useState } from 'react';
 import { render, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import IdleMonitorRedux from '../src/IdleMonitorRedux';
 
-declare var global;
-
 jest.useFakeTimers();
 
 const EPOCH = 123000000;
-const TIMEOUT = 1000 * 60 * 20;
 const LONG_TIME = 100000000;
 const SECOND = 1000;
 const HALF_SECOND = SECOND / 2;
 
 let now = EPOCH;
-
+/* eslint-disable @typescript-eslint/unbound-method */
 beforeEach(() => {
-  Date.now = () => EPOCH;
+  Date.now = (): number => EPOCH;
   now = EPOCH;
 });
 
-function advanceTimers(ms) {
+function advanceTimers(ms): void {
   now += ms;
-  Date.now = () => now;
-  act(() => jest.advanceTimersByTime(ms));
+  Date.now = (): number => now;
+  act(() => {
+    jest.advanceTimersByTime(ms);
+  });
 }
-
-function afterASecond() {
-  now += SECOND;
-  Date.now = () => now;
-}
+/* eslint-enable @typescript-eslint/unbound-method */
 
 const PREFIX = 'redux_action';
 const ACTION_RUN = `${PREFIX}_run`;
@@ -50,8 +44,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
           </IdleMonitorRedux>
         </div>
       );
-      expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toEqual({
+      expect(dispatch).toHaveBeenCalledWith({
         now: EPOCH,
         startTime: EPOCH,
         type: ACTION_RUN,
@@ -73,8 +66,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
 
       advanceTimers(LONG_TIME);
 
-      expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toEqual({
+      expect(dispatch).toHaveBeenCalledWith({
         now: EPOCH + LONG_TIME,
         startTime: EPOCH,
         type: ACTION_IDLE,
@@ -98,8 +90,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
 
       fireEvent.keyDown(getByText('Hello'), { key: 'Enter', code: 13 });
 
-      expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toEqual({
+      expect(dispatch).toHaveBeenCalledWith({
         now: EPOCH + LONG_TIME,
         startTime: EPOCH + LONG_TIME,
         type: ACTION_ACTIVE,
@@ -123,13 +114,14 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
       expect(dispatch).not.toHaveBeenCalled();
     });
 
-    test('`_stop` action should be dispatched when unmounted', () => {
+    test('-debug- `_stop` action should be dispatched when unmounted', () => {
       const dispatch = jest.fn();
 
-      function Wrap2() {
+      function Wrap2(): JSX.Element {
         const [mounted, setMounted] = useState(true);
         useEffect(() => {
           setTimeout(() => {
+            // console.log('*** unmounting ***');
             setMounted(false);
           }, HALF_SECOND);
         });
@@ -142,8 +134,9 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         );
       }
 
-      expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toEqual({
+      render(<Wrap2 />);
+
+      expect(dispatch).toHaveBeenCalledWith({
         now: EPOCH,
         startTime: EPOCH,
         type: ACTION_RUN,
@@ -155,18 +148,17 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
       // Enough time to trigger the timer in Wrap2, not the idle timer.
       advanceTimers(SECOND);
 
-      expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toEqual({
-        now: EPOCH,
+      expect(dispatch).toHaveBeenCalledWith({
+        now: EPOCH + SECOND,
         startTime: EPOCH,
-        type: ACTION_RUN,
+        type: ACTION_STOP,
       });
     });
 
     test('`_stop` action should be dispatched when disabled', () => {
       const dispatch = jest.fn();
 
-      function Wrap3() {
+      function Wrap3(): JSX.Element {
         const [enabled, setEnabled] = useState(true);
         useEffect(() => {
           setTimeout(() => {
@@ -191,8 +183,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
 
       advanceTimers(SECOND);
 
-      expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toEqual({
+      expect(dispatch).toHaveBeenCalledWith({
         now: EPOCH + SECOND,
         startTime: EPOCH,
         type: ACTION_STOP,
@@ -209,7 +200,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
 
     test('`_stop` action should be dispatched when started disabled', () => {
       const dispatch = jest.fn();
-      function Wrap4() {
+      function Wrap4(): JSX.Element {
         const [enabled, setEnabled] = useState(false);
         useEffect(() => {
           setTimeout(() => {
@@ -227,12 +218,13 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         );
       }
       render(<Wrap4 />);
+
       // The _run action should not be called
-      dispatch.mockClear();
+      expect(dispatch).not.toHaveBeenCalled();
+
       advanceTimers(SECOND);
 
-      expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toEqual({
+      expect(dispatch).toHaveBeenCalledWith({
         now: EPOCH + SECOND,
         startTime: EPOCH + SECOND,
         type: ACTION_RUN,
@@ -243,8 +235,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
 
       advanceTimers(LONG_TIME);
 
-      expect(dispatch).toHaveBeenCalled();
-      expect(dispatch.mock.calls[0][0]).toEqual({
+      expect(dispatch).toHaveBeenCalledWith({
         now: EPOCH + SECOND + LONG_TIME,
         startTime: EPOCH + SECOND,
         type: ACTION_IDLE,

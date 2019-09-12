@@ -1,6 +1,5 @@
-import React, { Component, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-import { renderToString, renderToStaticMarkup } from 'react-dom/server';
 import { render, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
@@ -9,28 +8,30 @@ import IdleMonitorEvents from '../src/IdleMonitorEvents';
 jest.useFakeTimers();
 
 const EPOCH = 123000000;
-const TIMEOUT = 1000 * 60 * 20;
 const LONG_TIME = 100000000;
 const SECOND = 1000;
 const HALF_SECOND = SECOND / 2;
 
 let now = EPOCH;
-
+/* eslint-disable @typescript-eslint/unbound-method */
 beforeEach(() => {
-  Date.now = () => EPOCH;
+  Date.now = (): number => EPOCH;
   now = EPOCH;
 });
 
-function advanceTimers(ms) {
+function advanceTimers(ms): void {
   now += ms;
-  Date.now = () => now;
-  act(() => jest.advanceTimersByTime(ms));
+  Date.now = (): number => now;
+  act(() => {
+    jest.advanceTimersByTime(ms);
+  });
 }
 
-function afterASecond() {
+function afterASecond(): void {
   now += SECOND;
-  Date.now = () => now;
+  Date.now = (): number => now;
 }
+/* eslint-enable @typescript-eslint/unbound-method */
 
 expect.extend({
   toBeActive: received => {
@@ -39,13 +40,13 @@ expect.extend({
       received.querySelectorAll('div.idle').length === 0;
     if (pass) {
       return {
-        message: () =>
+        message: (): string =>
           `expected ${received.innerHTML} not to have the 'active' className`,
         pass: true,
       };
     } else {
       return {
-        message: () =>
+        message: (): string =>
           `expected ${received.innerHTML} to have the 'active' className`,
         pass: false,
       };
@@ -57,13 +58,13 @@ expect.extend({
       received.querySelectorAll('div.idle').length === 1;
     if (pass) {
       return {
-        message: () =>
+        message: (): string =>
           `expected ${received.innerHTML} not to have the 'idle' className`,
         pass: true,
       };
     } else {
       return {
-        message: () =>
+        message: (): string =>
           `expected ${received.innerHTML} to have the 'idle' className`,
         pass: false,
       };
@@ -80,8 +81,10 @@ describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
           <IdleMonitorEvents onRun={onRun}>Hello</IdleMonitorEvents>
         </div>
       );
-      expect(onRun).toHaveBeenCalled();
-      expect(onRun.mock.calls[0][0].startTime).toBe(EPOCH);
+      expect(onRun).toHaveBeenCalledWith({
+        startTime: EPOCH,
+        now,
+      });
     });
 
     test('neither onIdle nor onActive should be fired before timeout', () => {
@@ -111,9 +114,10 @@ describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
 
       advanceTimers(LONG_TIME);
 
-      expect(onIdle).toHaveBeenCalled();
-      expect(onIdle.mock.calls[0][0].now).toBe(EPOCH + LONG_TIME);
-      expect(onIdle.mock.calls[0][0].startTime).toBe(EPOCH);
+      expect(onIdle).toHaveBeenCalledWith({
+        now: EPOCH + LONG_TIME,
+        startTime: EPOCH,
+      });
       expect(onActive).not.toHaveBeenCalled();
     });
 
@@ -143,11 +147,10 @@ describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
       expect(container).toBeActive();
 
       expect(onIdle).not.toHaveBeenCalled();
-      expect(onActive).toHaveBeenCalled();
-
-      expect(onActive.mock.calls[0][0].startTime).toBe(
-        EPOCH + LONG_TIME + SECOND
-      );
+      expect(onActive).toHaveBeenCalledWith({
+        startTime: EPOCH + LONG_TIME + SECOND,
+        now,
+      });
     });
 
     test('should not fire onActive after UI event if not idle first', () => {
@@ -172,7 +175,7 @@ describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
     const onRun = jest.fn();
     const onStop = jest.fn();
 
-    function Wrap1() {
+    function Wrap1(): JSX.Element {
       const [mounted, setMounted] = useState(true);
       useEffect(() => {
         setTimeout(() => {
@@ -190,8 +193,10 @@ describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
 
     render(<Wrap1 />);
 
-    expect(onRun).toHaveBeenCalled();
-    expect(onRun.mock.calls[0][0].startTime).toBe(EPOCH);
+    expect(onRun).toHaveBeenCalledWith({
+      startTime: EPOCH,
+      now,
+    });
     expect(onStop).not.toHaveBeenCalled();
 
     onRun.mockClear();
@@ -199,8 +204,10 @@ describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
     // Enough time to trigger the timer in Wrap1, not the idle timer.
     advanceTimers(SECOND);
 
-    expect(onStop).toHaveBeenCalled();
-    expect(onStop.mock.calls[0][0]).toMatchInlineSnapshot();
+    expect(onStop).toHaveBeenCalledWith({
+      now: EPOCH + SECOND,
+      startTime: EPOCH,
+    });
     expect(onRun).not.toHaveBeenCalled();
   });
 });

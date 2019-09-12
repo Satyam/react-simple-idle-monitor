@@ -3,7 +3,6 @@ import { render, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import IdleMonitor, { useIdleMonitor } from '../src/index';
-import { declareClass } from '@babel/types';
 
 jest.useFakeTimers();
 
@@ -15,23 +14,27 @@ const HALF_SECOND = SECOND / 2;
 
 let now = EPOCH;
 
-beforeEach(() => {
-  Date.now = () => EPOCH;
+/* eslint-disable @typescript-eslint/unbound-method */
+beforeEach((): void => {
+  Date.now = (): number => EPOCH;
   now = EPOCH;
 });
 
-function advanceTimers(ms) {
+function advanceTimers(ms): void {
   now += ms;
-  Date.now = () => now;
-  act(() => jest.advanceTimersByTime(ms));
+  Date.now = (): number => now;
+  act((): void => {
+    jest.advanceTimersByTime(ms);
+  });
 }
 
-function afterASecond() {
+function afterASecond(): void {
   now += SECOND;
-  Date.now = () => now;
+  Date.now = (): number => now;
 }
+/* eslint-enable @typescript-eslint/unbound-method */
 
-function StatusForm({ isRunning, isIdle, timeout, startTime }) {
+function StatusForm({ isRunning, isIdle, timeout, startTime }): JSX.Element {
   return (
     <form data-testid="status">
       <input readOnly name="isRunning" type="checkbox" checked={isRunning} />
@@ -42,14 +45,22 @@ function StatusForm({ isRunning, isIdle, timeout, startTime }) {
   );
 }
 
-function StatusConsumer() {
+function StatusConsumer(): JSX.Element {
   const state = useIdleMonitor();
   return <StatusForm {...state} />;
 }
 
-function StatusLogger() {
+function StatusLogger(): JSX.Element {
   const { isRunning, isIdle, timeout, startTime } = useIdleMonitor();
-  const [log, setLog] = useState([]);
+  const [log, setLog] = useState<
+    {
+      isRunning: boolean;
+      isIdle: boolean;
+      timeout: number;
+      startTime: number;
+      now: number;
+    }[]
+  >([]);
 
   useEffect(() => {
     setLog(l => [...l, { isRunning, isIdle, timeout, startTime, now }]);
@@ -109,7 +120,7 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
           <StatusConsumer />
         </IdleMonitor>
       );
-      act(() => jest.runAllTimers());
+      advanceTimers(LONG_TIME);
 
       expect(getByTestId('status')).toHaveFormValues({
         isRunning: true,
@@ -278,14 +289,14 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
 
   describe('Functions', () => {
     test('activate(false)', () => {
-      function ActivateFalse() {
+      function ActivateFalse(): React.ReactElement | null {
         const { activate } = useIdleMonitor();
         useEffect(() => {
           setTimeout(() => {
             now += HALF_SECOND;
             act(() => activate(false));
           }, HALF_SECOND); // less than a second
-        }, []);
+        }, [activate]);
         return null;
       }
       const { getByTestId } = render(
@@ -307,13 +318,13 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
     });
 
     test('activate(undefined)', () => {
-      function Activate() {
+      function Activate(): JSX.Element | null {
         const { activate } = useIdleMonitor();
         useEffect(() => {
           setTimeout(() => {
             act(() => activate());
           }, LONG_TIME + HALF_SECOND);
-        }, []);
+        }, [activate]);
         return null;
       }
       const { getByTestId } = render(
@@ -347,13 +358,13 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
       });
     });
     test('activate(SECOND)', () => {
-      function Activate() {
+      function Activate(): JSX.Element | null {
         const { activate } = useIdleMonitor();
         useEffect(() => {
           setTimeout(() => {
             act(() => activate(SECOND));
           }, LONG_TIME + HALF_SECOND);
-        }, []);
+        }, [activate]);
         return null;
       }
       const { getByTestId } = render(
@@ -389,7 +400,7 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
     });
 
     test('Stop and restart', () => {
-      function StopStart() {
+      function StopStart(): JSX.Element | null {
         const { run, stop } = useIdleMonitor();
         useEffect(() => {
           setTimeout(() => {
@@ -398,7 +409,7 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
           setTimeout(() => {
             act(() => run());
           }, SECOND + HALF_SECOND);
-        }, []);
+        }, [run, stop]);
         return null;
       }
       const { getByTestId } = render(
