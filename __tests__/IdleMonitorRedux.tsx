@@ -3,29 +3,16 @@ import { render, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import IdleMonitorRedux from '../src/IdleMonitorRedux';
+import { useIdleMonitor } from '../src/index';
 
-jest.useFakeTimers();
-
-const EPOCH = 123000000;
-const LONG_TIME = 100000000;
-const SECOND = 1000;
-const HALF_SECOND = SECOND / 2;
-
-let now = EPOCH;
-/* eslint-disable @typescript-eslint/unbound-method */
-beforeEach(() => {
-  Date.now = (): number => EPOCH;
-  now = EPOCH;
-});
-
-function advanceTimers(ms): void {
-  now += ms;
-  Date.now = (): number => now;
-  act(() => {
-    jest.advanceTimersByTime(ms);
-  });
-}
-/* eslint-enable @typescript-eslint/unbound-method */
+import {
+  EPOCH,
+  LONG_TIME,
+  SECOND,
+  HALF_SECOND,
+  advanceTimers,
+  now,
+} from './setup';
 
 const PREFIX = 'redux_action';
 const ACTION_RUN = `${PREFIX}_run`;
@@ -240,6 +227,132 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         startTime: EPOCH + SECOND,
         type: ACTION_IDLE,
       });
+    });
+  });
+
+  describe('actions dispatched in response to hooks', () => {
+    test('stop and restart', () => {
+      const dispatch = jest.fn();
+
+      function Wrap2(): JSX.Element | null {
+        const { stop, run } = useIdleMonitor();
+        useEffect(() => {
+          setTimeout(() => {
+            act(() => stop());
+          }, HALF_SECOND);
+          setTimeout(() => {
+            act(() => run());
+          }, SECOND + HALF_SECOND);
+        }, [run, stop]);
+        return null;
+      }
+
+      render(
+        <IdleMonitorRedux dispatch={dispatch} reduxActionPrefix={PREFIX}>
+          <Wrap2 />
+        </IdleMonitorRedux>
+      );
+      expect(dispatch).toHaveBeenCalledWith({
+        startTime: EPOCH,
+        now,
+        type: ACTION_RUN,
+      });
+
+      dispatch.mockClear();
+
+      advanceTimers(SECOND);
+
+      expect(dispatch).toHaveBeenCalledWith({
+        now: EPOCH + SECOND,
+        startTime: EPOCH,
+        type: ACTION_STOP,
+      });
+
+      dispatch.mockClear();
+
+      advanceTimers(SECOND);
+
+      expect(dispatch).toHaveBeenCalledWith({
+        now: EPOCH + SECOND + SECOND,
+        startTime: EPOCH + SECOND + SECOND,
+        type: ACTION_RUN,
+      });
+    });
+
+    test('onIdle and onActive', () => {
+      const dispatch = jest.fn();
+
+      function Wrap3(): JSX.Element | null {
+        const { activate } = useIdleMonitor();
+        useEffect(() => {
+          setTimeout(() => {
+            act(() => activate(false));
+          }, HALF_SECOND);
+          setTimeout(() => {
+            act(() => activate());
+          }, SECOND + HALF_SECOND);
+        }, [activate]);
+        return null;
+      }
+
+      render(
+        <IdleMonitorRedux dispatch={dispatch} reduxActionPrefix={PREFIX}>
+          <Wrap3 />
+        </IdleMonitorRedux>
+      );
+
+      advanceTimers(SECOND);
+
+      expect(dispatch).toHaveBeenCalledWith({
+        now: EPOCH + SECOND,
+        startTime: EPOCH,
+        type: ACTION_IDLE,
+      });
+
+      dispatch.mockClear();
+
+      advanceTimers(SECOND);
+
+      expect(dispatch).toHaveBeenCalledWith({
+        now: EPOCH + SECOND + SECOND,
+        startTime: EPOCH + SECOND + SECOND,
+        type: ACTION_ACTIVE,
+      });
+    });
+
+    test('no idle nor activate when stopped', () => {
+      const dispatch = jest.fn();
+
+      function Wrap4(): JSX.Element | null {
+        const { activate, run } = useIdleMonitor();
+        useEffect(() => {
+          setTimeout(() => {
+            act(() => activate(false));
+          }, HALF_SECOND);
+          setTimeout(() => {
+            act(() => activate());
+          }, SECOND + HALF_SECOND);
+        }, [activate]);
+        return null;
+      }
+
+      render(
+        <IdleMonitorRedux
+          dispatch={dispatch}
+          reduxActionPrefix={PREFIX}
+          enabled={false}
+        >
+          <Wrap4 />
+        </IdleMonitorRedux>
+      );
+
+      advanceTimers(SECOND);
+
+      expect(dispatch).not.toHaveBeenCalled();
+
+      advanceTimers(SECOND);
+
+      expect(dispatch).not.toHaveBeenCalled();
     });
   });
 });

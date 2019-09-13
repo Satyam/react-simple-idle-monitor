@@ -3,4 +3,5 @@ module.exports = {
   coverageDirectory: '<rootDir>/coverage',
   coverageReporters: ['html', 'text'],
   setupFiles: ['<rootDir>/node_modules/regenerator-runtime/runtime'],
+  testRegex: '/__tests__/.*\\.tsx$',
 };

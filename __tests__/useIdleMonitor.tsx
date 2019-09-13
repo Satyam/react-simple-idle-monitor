@@ -4,43 +4,32 @@ import '@testing-library/jest-dom/extend-expect';
 
 import IdleMonitor, { useIdleMonitor } from '../src/index';
 
-jest.useFakeTimers();
+import {
+  TIMEOUT,
+  EPOCH,
+  LONG_TIME,
+  SECOND,
+  HALF_SECOND,
+  advanceTimers,
+  afterASecond,
+  afterAWhile,
+  now,
+} from './setup';
 
-const EPOCH = 123000000;
-const TIMEOUT = 1000 * 60 * 20;
-const LONG_TIME = 100000000;
-const SECOND = 1000;
-const HALF_SECOND = SECOND / 2;
-
-let now = EPOCH;
-
-/* eslint-disable @typescript-eslint/unbound-method */
-beforeEach((): void => {
-  Date.now = (): number => EPOCH;
-  now = EPOCH;
-});
-
-function advanceTimers(ms): void {
-  now += ms;
-  Date.now = (): number => now;
-  act((): void => {
-    jest.advanceTimersByTime(ms);
-  });
-}
-
-function afterASecond(): void {
-  now += SECOND;
-  Date.now = (): number => now;
-}
-/* eslint-enable @typescript-eslint/unbound-method */
-
-function StatusForm({ isRunning, isIdle, timeout, startTime }): JSX.Element {
+function StatusForm({
+  isRunning,
+  isIdle,
+  timeout,
+  startTime,
+  className,
+}): JSX.Element {
   return (
     <form data-testid="status">
       <input readOnly name="isRunning" type="checkbox" checked={isRunning} />
       <input readOnly name="isIdle" type="checkbox" checked={isIdle} />
       <input readOnly name="timeout" type="number" value={timeout} />
       <input readOnly name="startTime" type="number" value={startTime} />
+      <input readOnly name="className" value={className} />
     </form>
   );
 }
@@ -51,20 +40,30 @@ function StatusConsumer(): JSX.Element {
 }
 
 function StatusLogger(): JSX.Element {
-  const { isRunning, isIdle, timeout, startTime } = useIdleMonitor();
+  const {
+    isRunning,
+    isIdle,
+    timeout,
+    startTime,
+    className = '',
+  } = useIdleMonitor();
   const [log, setLog] = useState<
     {
       isRunning: boolean;
       isIdle: boolean;
       timeout: number;
       startTime: number;
+      className: string;
       now: number;
     }[]
   >([]);
 
   useEffect(() => {
-    setLog(l => [...l, { isRunning, isIdle, timeout, startTime, now }]);
-  }, [isRunning, isIdle, timeout, startTime]);
+    setLog(l => [
+      ...l,
+      { isRunning, isIdle, timeout, startTime, className, now },
+    ]);
+  }, [isRunning, isIdle, timeout, startTime, className]);
   return <div data-testid="log">{JSON.stringify(log, null, 2)}</div>;
 }
 
@@ -100,14 +99,14 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
 
     test('with a different timeout value', () => {
       const { getByTestId } = render(
-        <IdleMonitor timeout={1000}>
+        <IdleMonitor timeout={SECOND}>
           <StatusConsumer />
         </IdleMonitor>
       );
       expect(getByTestId('status')).toHaveFormValues({
         isRunning: true,
         isIdle: false,
-        timeout: 1000,
+        timeout: SECOND,
         startTime: EPOCH,
       });
     });
@@ -189,24 +188,24 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
           <StatusLogger />
         </IdleMonitor>
       );
-      expect(getByTestId('log').firstChild).toMatchInlineSnapshot(`
-        [
-          {
-            "isRunning": false,
-            "isIdle": false,
-            "timeout": 0,
-            "startTime": 0,
-            "now": 123000000
-          },
-          {
-            "isRunning": true,
-            "isIdle": false,
-            "timeout": 1200000,
-            "startTime": 123000000,
-            "now": 123000000
-          }
-        ]
-      `);
+      expect(JSON.parse(getByTestId('log').innerHTML)).toEqual([
+        {
+          isRunning: false,
+          isIdle: false,
+          timeout: 0,
+          startTime: 0,
+          className: '',
+          now: EPOCH,
+        },
+        {
+          isRunning: true,
+          isIdle: false,
+          timeout: TIMEOUT,
+          startTime: EPOCH,
+          className: '',
+          now: EPOCH,
+        },
+      ]);
     });
     test('let it go idle', () => {
       const { getByTestId } = render(
@@ -215,31 +214,32 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
         </IdleMonitor>
       );
       advanceTimers(LONG_TIME);
-      expect(getByTestId('log').firstChild).toMatchInlineSnapshot(`
-        [
-          {
-            "isRunning": false,
-            "isIdle": false,
-            "timeout": 0,
-            "startTime": 0,
-            "now": 123000000
-          },
-          {
-            "isRunning": true,
-            "isIdle": false,
-            "timeout": 1200000,
-            "startTime": 123000000,
-            "now": 123000000
-          },
-          {
-            "isRunning": true,
-            "isIdle": true,
-            "timeout": 1200000,
-            "startTime": 123000000,
-            "now": 223000000
-          }
-        ]
-      `);
+      expect(JSON.parse(getByTestId('log').innerHTML)).toEqual([
+        {
+          isRunning: false,
+          isIdle: false,
+          timeout: 0,
+          startTime: 0,
+          className: '',
+          now: EPOCH,
+        },
+        {
+          isRunning: true,
+          isIdle: false,
+          timeout: TIMEOUT,
+          startTime: EPOCH,
+          className: '',
+          now: EPOCH,
+        },
+        {
+          isRunning: true,
+          isIdle: true,
+          timeout: TIMEOUT,
+          startTime: EPOCH,
+          className: '',
+          now: EPOCH + LONG_TIME,
+        },
+      ]);
     });
 
     test('let it go idle and then active again', () => {
@@ -252,38 +252,40 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
       advanceTimers(LONG_TIME);
       afterASecond();
       fireEvent.keyDown(getByText('Hello'), { key: 'Enter', code: 13 });
-      expect(getByTestId('log').firstChild).toMatchInlineSnapshot(`
-        [
-          {
-            "isRunning": false,
-            "isIdle": false,
-            "timeout": 0,
-            "startTime": 0,
-            "now": 123000000
-          },
-          {
-            "isRunning": true,
-            "isIdle": false,
-            "timeout": 1200000,
-            "startTime": 123000000,
-            "now": 123000000
-          },
-          {
-            "isRunning": true,
-            "isIdle": true,
-            "timeout": 1200000,
-            "startTime": 123000000,
-            "now": 223000000
-          },
-          {
-            "isRunning": true,
-            "isIdle": false,
-            "timeout": 1200000,
-            "startTime": 223001000,
-            "now": 223001000
-          }
-        ]
-      `);
+      expect(JSON.parse(getByTestId('log').innerHTML)).toEqual([
+        {
+          isRunning: false,
+          isIdle: false,
+          timeout: 0,
+          startTime: 0,
+          className: '',
+          now: EPOCH,
+        },
+        {
+          isRunning: true,
+          isIdle: false,
+          timeout: TIMEOUT,
+          startTime: EPOCH,
+          className: '',
+          now: EPOCH,
+        },
+        {
+          isRunning: true,
+          isIdle: true,
+          timeout: TIMEOUT,
+          startTime: EPOCH,
+          className: '',
+          now: EPOCH + LONG_TIME,
+        },
+        {
+          isRunning: true,
+          isIdle: false,
+          timeout: TIMEOUT,
+          startTime: EPOCH + LONG_TIME + SECOND,
+          className: '',
+          now: EPOCH + LONG_TIME + SECOND,
+        },
+      ]);
     });
   });
 
@@ -293,7 +295,7 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
         const { activate } = useIdleMonitor();
         useEffect(() => {
           setTimeout(() => {
-            now += HALF_SECOND;
+            afterAWhile(HALF_SECOND);
             act(() => activate(false));
           }, HALF_SECOND); // less than a second
         }, [activate]);
@@ -312,8 +314,8 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
         isRunning: true,
         // Should become idle
         isIdle: true,
-        timeout: 1200000,
-        startTime: 123000000,
+        timeout: TIMEOUT,
+        startTime: EPOCH,
       });
     });
 

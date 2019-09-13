@@ -4,73 +4,17 @@ import { render, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import IdleMonitorEvents from '../src/IdleMonitorEvents';
+import { useIdleMonitor } from '../src/index';
 
-jest.useFakeTimers();
-
-const EPOCH = 123000000;
-const LONG_TIME = 100000000;
-const SECOND = 1000;
-const HALF_SECOND = SECOND / 2;
-
-let now = EPOCH;
-/* eslint-disable @typescript-eslint/unbound-method */
-beforeEach(() => {
-  Date.now = (): number => EPOCH;
-  now = EPOCH;
-});
-
-function advanceTimers(ms): void {
-  now += ms;
-  Date.now = (): number => now;
-  act(() => {
-    jest.advanceTimersByTime(ms);
-  });
-}
-
-function afterASecond(): void {
-  now += SECOND;
-  Date.now = (): number => now;
-}
-/* eslint-enable @typescript-eslint/unbound-method */
-
-expect.extend({
-  toBeActive: received => {
-    const pass =
-      received.querySelectorAll('div.active').length === 1 &&
-      received.querySelectorAll('div.idle').length === 0;
-    if (pass) {
-      return {
-        message: (): string =>
-          `expected ${received.innerHTML} not to have the 'active' className`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: (): string =>
-          `expected ${received.innerHTML} to have the 'active' className`,
-        pass: false,
-      };
-    }
-  },
-  toBeIdle: received => {
-    const pass =
-      received.querySelectorAll('div.active').length === 0 &&
-      received.querySelectorAll('div.idle').length === 1;
-    if (pass) {
-      return {
-        message: (): string =>
-          `expected ${received.innerHTML} not to have the 'idle' className`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: (): string =>
-          `expected ${received.innerHTML} to have the 'idle' className`,
-        pass: false,
-      };
-    }
-  },
-});
+import {
+  EPOCH,
+  LONG_TIME,
+  SECOND,
+  HALF_SECOND,
+  advanceTimers,
+  afterASecond,
+  now,
+} from './setup';
 
 describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
   describe('event firing', () => {
@@ -181,7 +125,7 @@ describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
         setTimeout(() => {
           setMounted(false);
         }, HALF_SECOND);
-      });
+      }, []);
       return mounted ? (
         <IdleMonitorEvents onRun={onRun} onStop={onStop}>
           Hello
@@ -209,5 +153,131 @@ describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
       startTime: EPOCH,
     });
     expect(onRun).not.toHaveBeenCalled();
+  });
+
+  describe('events fired in response to hooks', () => {
+    test('stop and restart', () => {
+      const onRun = jest.fn();
+      const onStop = jest.fn();
+
+      function Wrap2(): JSX.Element | null {
+        const { stop, run } = useIdleMonitor();
+        useEffect(() => {
+          setTimeout(() => {
+            act(() => stop());
+          }, HALF_SECOND);
+          setTimeout(() => {
+            act(() => run());
+          }, SECOND + HALF_SECOND);
+        }, [run, stop]);
+        return null;
+      }
+
+      render(
+        <IdleMonitorEvents onRun={onRun} onStop={onStop}>
+          <Wrap2 />
+        </IdleMonitorEvents>
+      );
+      expect(onRun).toHaveBeenCalledWith({
+        startTime: EPOCH,
+        now,
+      });
+      expect(onStop).not.toHaveBeenCalled();
+
+      onRun.mockClear();
+
+      advanceTimers(SECOND);
+
+      expect(onStop).toHaveBeenCalledWith({
+        now: EPOCH + SECOND,
+        startTime: EPOCH,
+      });
+      expect(onRun).not.toHaveBeenCalled();
+
+      onStop.mockClear();
+
+      advanceTimers(SECOND);
+
+      expect(onRun).toHaveBeenCalledWith({
+        now: EPOCH + SECOND + SECOND,
+        startTime: EPOCH + SECOND + SECOND,
+      });
+      expect(onStop).not.toHaveBeenCalled();
+    });
+    test('onIdle and onActive', () => {
+      const onActive = jest.fn();
+      const onIdle = jest.fn();
+
+      function Wrap3(): JSX.Element | null {
+        const { activate } = useIdleMonitor();
+        useEffect(() => {
+          setTimeout(() => {
+            act(() => activate(false));
+          }, HALF_SECOND);
+          setTimeout(() => {
+            act(() => activate());
+          }, SECOND + HALF_SECOND);
+        }, [activate]);
+        return null;
+      }
+
+      render(
+        <IdleMonitorEvents onActive={onActive} onIdle={onIdle}>
+          <Wrap3 />
+        </IdleMonitorEvents>
+      );
+
+      advanceTimers(SECOND);
+
+      expect(onIdle).toHaveBeenCalledWith({
+        now: EPOCH + SECOND,
+        startTime: EPOCH,
+      });
+      expect(onActive).not.toHaveBeenCalled();
+
+      onIdle.mockClear();
+
+      advanceTimers(SECOND);
+
+      expect(onActive).toHaveBeenCalledWith({
+        now: EPOCH + SECOND + SECOND,
+        startTime: EPOCH + SECOND + SECOND,
+      });
+      expect(onIdle).not.toHaveBeenCalled();
+    });
+
+    test('no idle nor activate when stopped', () => {
+      const onActive = jest.fn();
+      const onIdle = jest.fn();
+
+      function Wrap4(): JSX.Element | null {
+        const { activate, run } = useIdleMonitor();
+        useEffect(() => {
+          setTimeout(() => {
+            act(() => activate(false));
+          }, HALF_SECOND);
+          setTimeout(() => {
+            act(() => activate());
+          }, SECOND + HALF_SECOND);
+        }, [activate]);
+        return null;
+      }
+
+      render(
+        <IdleMonitorEvents onActive={onActive} onIdle={onIdle} enabled={false}>
+          <Wrap4 />
+        </IdleMonitorEvents>
+      );
+
+      advanceTimers(SECOND);
+
+      expect(onIdle).not.toHaveBeenCalled();
+      expect(onActive).not.toHaveBeenCalled();
+
+      advanceTimers(SECOND);
+
+      expect(onActive).not.toHaveBeenCalled();
+      expect(onIdle).not.toHaveBeenCalled();
+    });
   });
 });

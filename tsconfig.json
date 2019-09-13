@@ -12,7 +12,7 @@
   },
   "include": [
     "./src/*.tsx",
-    "jest.config.js",
+    "./jest.config.js",
     "./__tests__/*.tsx",
     "./examples/*.tsx"
   ]
