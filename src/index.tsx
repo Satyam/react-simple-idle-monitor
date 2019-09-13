@@ -3,18 +3,13 @@
  *
  * @author Daniel Barreiro
  *
- * Portions taken from:
- * https://github.com/SupremeTechnopriest/react-idle-timer/blob/master/src/index.js
- * By  Randy Lebeau
- *
- *
  */
 import React, {
   createContext,
   useContext,
   useReducer,
   useEffect,
-  useState,
+  useCallback,
   useRef,
   useMemo,
 } from 'react';
@@ -45,6 +40,12 @@ type IdleMonitorContext = {
   startTime: number;
 
   /**
+   * The current className set from either `activeClassName` or
+   * `idleClassName` depending on the state
+   */
+  className: string | undefined;
+
+  /**
    * If `isIdle==true`, it will switch to not-idle (active).
    * If already active, it will re-start the timeout counter
    * with the given timeout or the default set in the `timeout` property.
@@ -70,30 +71,55 @@ type IdleMonitorContext = {
   stop: () => void;
 };
 
+type InternalState = {
+  _clientX: number;
+  _clientY: number;
+  _setTimer: number;
+  _defaultTimeout: number;
+  _currentTimeout: number;
+  _activeClassName: string | undefined;
+  _idleClassName: string | undefined;
+};
+
+// The following is a placeholder to keep TypeScript happy
+// while the context is still to be created
+/* istanbul ignore next */
 const notReady = (): void => {
   throw new Error('Idle Monitor not active yet');
 };
+
 const initialContextValues = {
   isIdle: false,
   isRunning: false,
   timeout: 0,
   startTime: 0,
+  className: undefined,
   activate: notReady,
   run: notReady,
   stop: notReady,
+  _clientX: 0,
+  _clientY: 0,
+  _setTimer: 0,
+  _defaultTimeout: 0,
+  _currentTimeout: 0,
+  _activeClassName: undefined,
+  _idleClassName: undefined,
 };
 
 enum Action {
+  Init = 'Init',
   Run = 'Run',
   Stop = 'Stop',
   Idle = 'Idle',
   Active = 'Active',
+  Event = 'Event',
+  SetTimeout = 'SetTimeout',
 }
 
 type IdleMonitorActions =
   | {
       type: Action.Run;
-      timeout: number;
+      timeout?: number;
     }
   | {
       type: Action.Stop;
@@ -103,8 +129,13 @@ type IdleMonitorActions =
     }
   | {
       type: Action.Active;
-      timeout: number;
-    };
+      timeout?: number;
+    }
+  | {
+      type: Action.Event;
+      ev: UIEvent;
+    }
+  | { type: Action.SetTimeout; timeout: number };
 
 export type IdleMonitorProps = {
   /**
@@ -152,45 +183,94 @@ export const IdleMonitorContext = createContext<IdleMonitorContext>(
 );
 
 function reducer(
-  state: IdleMonitorContext,
-  action: IdleMonitorActions
-): IdleMonitorContext {
+  state: Readonly<IdleMonitorContext & InternalState>,
+  action: Readonly<IdleMonitorActions>
+): Readonly<IdleMonitorContext & InternalState> {
   switch (action.type) {
-    case Action.Run:
+    case Action.Run: {
+      const t = action.timeout || state._defaultTimeout;
       return {
         ...state,
         isIdle: false,
         isRunning: true,
         startTime: Date.now(),
-        timeout: action.timeout,
+        timeout: t,
+        className: state._activeClassName,
+        _setTimer: t,
+        _currentTimeout: t,
       };
+    }
     case Action.Stop:
       return {
         ...state,
         isIdle: false,
         isRunning: false,
+        className: state._activeClassName,
+        _setTimer: 0,
       };
     case Action.Idle:
       return {
         ...state,
         isIdle: true,
+        className: state._idleClassName,
+        _setTimer: 0,
       };
     case Action.Active:
       return {
         ...state,
         isIdle: false,
         startTime: Date.now(),
-        timeout: action.timeout,
+        timeout: action.timeout || state._currentTimeout,
+        className: state._activeClassName,
+        _setTimer: state._currentTimeout,
       };
+    case Action.Event: {
+      if (!state.isRunning || !state.isIdle) return state;
+      let clientX = state._clientX;
+      let clientY = state._clientY;
+      if (action.ev.type === 'mousemove' || action.ev.type === 'touchmove') {
+        const ev = action.ev as MouseEvent;
+        clientX = ev.clientX;
+        clientY = ev.clientY;
+        // Ignore small mouse movements possibly due to some odd vibration or shaking
+        if (
+          Math.abs(state._clientX - clientX) +
+            Math.abs(state._clientY - clientY) <
+          20
+        )
+          return state;
+      }
+      return {
+        ...state,
+        _clientX: clientX,
+        _clientY: clientY,
+        isIdle: false,
+        startTime: Date.now(),
+        timeout: state._currentTimeout,
+        className: state._activeClassName,
+        _setTimer: state._currentTimeout,
+      };
+    }
+    case Action.SetTimeout: {
+      const t = action.timeout;
+      return {
+        ...state,
+        _currentTimeout: t,
+        _defaultTimeout: t,
+        _setTimer: t,
+      };
+    }
+    // Should never be called, but Typescript expects a return so ...
+    /* istanbul ignore next */
     default:
       return state;
   }
 }
 
 // const logReducer = (
-//   state: IdleMonitorContext,
-//   action: IdleMonitorActions
-// ): IdleMonitorContext => {
+//   state: Readonly<IdleMonitorContext & InternalState>,
+//   action: Readonly<IdleMonitorActions>
+// ): Readonly<IdleMonitorContext & InternalState> => {
 //   console.log('----- before', state, action);
 //   const newState = reducer(state, action);
 //   console.log('----- after', newState);
@@ -214,110 +294,87 @@ const IdleMonitor = ({
 }: IdleMonitorProps): JSX.Element => {
   const [state, dispatch] = useReducer(reducer, {
     ...initialContextValues,
-    run,
-    stop,
-    activate,
+    _activeClassName: activeClassName,
+    className: activeClassName,
+    _idleClassName: idleClassName,
+    _defaultTimeout: timeout,
   });
 
-  const [className, setClassName] = useState(activeClassName);
-
-  const currentTimeout = useRef<number>(timeout);
-  const timerId = useRef<number>();
-  const pageXY = useRef<[number, number]>([0, 0]);
   const isMounted = useRef<boolean>(false);
 
-  const hasClassName = !!(activeClassName || idleClassName);
+  const run = useCallback(
+    (timeout?: number): void => {
+      dispatch({ type: Action.Run, timeout });
+    },
+    [dispatch]
+  );
 
-  function run(newTimeout?: number): void {
-    // console.log('**run**', { newTimeout });
-    currentTimeout.current = newTimeout || timeout;
-    dispatch({ type: Action.Run, timeout: currentTimeout.current });
-    startTimeout();
-  }
-
-  function stop(): void {
-    // console.log('**stop**, start', { timerId: timerId.current });
-    cancelTimeout();
+  const stop = useCallback((): void => {
     dispatch({
       type: Action.Stop,
     });
-    // console.log('**stop** end');
-  }
+  }, [dispatch]);
 
-  function setIdle(): void {
-    // console.log('**Idle**', { hasClassName, idleClassName });
+  const setIdle = useCallback((): void => {
     dispatch({ type: Action.Idle });
-    if (hasClassName) setClassName(idleClassName);
-  }
+  }, [dispatch]);
 
-  function setActive(newTimeout?: number): void {
-    // console.log('**setActive**', { newTimeout, hasClassName });
-    dispatch({
-      type: Action.Active,
-      timeout: newTimeout || currentTimeout.current,
-    });
-    if (hasClassName) setClassName(activeClassName);
-    startTimeout(newTimeout);
-  }
+  const setActive = useCallback(
+    (timeout?: number): void => {
+      dispatch({
+        type: Action.Active,
+        timeout,
+      });
+    },
+    [dispatch]
+  );
 
-  function activate(newTimeout?: number | false): void {
-    // console.log('**activate**', { newTimeout });
-    if (newTimeout === false) {
-      setIdle();
-    } else {
-      setActive(newTimeout);
-    }
-  }
-
-  function onEventHandler(ev): void {
-    const [pageX, pageY] = pageXY.current;
-
-    // If not enabled, ignore events
-    if (!state.isRunning || !state.isIdle) return;
-    /*
-          The following is taken verbatim from
-          https://github.com/SupremeTechnopriest/react-idle-timer/blob/master/src/index.js
-          It seems to make sense, but I was unable to figure out a unit test for it
-        */
-    // Mousemove event
-    /* istanbul ignore if */
-    if (ev.type === 'mousemove') {
-      // if coord are same, it didn't move
-      if (ev.pageX === pageX && ev.pageY === pageY) return;
-      // if coord don't exist how could it move
-      if (typeof ev.pageX === 'undefined' && typeof ev.pageY === 'undefined') {
-        return;
+  const activate = useCallback(
+    (newTimeout?: number | false): void => {
+      if (newTimeout === false) {
+        setIdle();
+      } else {
+        setActive(newTimeout);
       }
-      // under 200 ms is hard to do, and you would have to stop,
-      // as continuous activity will bypass this
-      if (Date.now() - state.startTime < 200) return;
-    }
-    setActive();
-    pageXY.current = [ev.pageX, ev.pageY]; // update mouse coord
-  }
+    },
+    [setIdle, setActive]
+  );
+
+  const onEventHandler = useCallback(
+    (ev): void => {
+      ev.persist();
+      dispatch({ type: Action.Event, ev });
+    },
+    [dispatch]
+  );
 
   useEffect(() => {
     if (!isMounted.current) return;
-    // console.log('useEffect for enabled', {
-    //   enabled,
-    //   state,
-    // });
     if (enabled) {
-      if (!state.isRunning) state.run();
-    } else if (state.isRunning) state.stop();
-  }, [enabled, state]);
+      run();
+    } else stop();
+  }, [enabled, run, stop]);
 
   useEffect(() => {
     if (!isMounted.current) return;
-    // console.log('useEffect for timeout', {
-    //   timeout,
-    // });
-    currentTimeout.current = timeout;
-    startTimeout();
+    dispatch({
+      type: Action.SetTimeout,
+      timeout,
+    });
   }, [timeout]);
 
+  const timerId = useRef(0);
   useEffect(() => {
-    // console.log('useEffect init', { enabled, timeout, state });
+    if (!isMounted.current) return;
+    if (state._setTimer) {
+      timerId.current = setTimeout(setIdle, state._setTimer);
+      return (): void => {
+        clearTimeout(timerId.current);
+      };
+    }
+  }, [state._setTimer, setIdle]);
+
+  useEffect(() => {
     if (enabled) {
       run();
     } else {
@@ -328,26 +385,9 @@ const IdleMonitor = ({
       isMounted.current = false;
       stop();
     };
+    // This one is for initialization and teardown only
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
-
-  function cancelTimeout(): void {
-    // console.log('cancelTimeout', timerId.current);
-    if (timerId.current) {
-      clearTimeout(timerId.current);
-      timerId.current = 0;
-    }
-  }
-
-  function startTimeout(newTimeout?: number): void {
-    // console.log('**startTimeout**', {
-    //   newTimeout,
-    //   timerId: timerId.current,
-    //   timeout,
-    //   currentTimeout: currentTimeout.current,
-    // });
-    cancelTimeout;
-    timerId.current = setTimeout(setIdle, newTimeout || currentTimeout.current);
-  }
 
   const listenTo = useMemo(
     () =>
@@ -361,9 +401,33 @@ const IdleMonitor = ({
     [events, onEventHandler]
   );
 
+  const context: IdleMonitorContext = useMemo(() => {
+    const { isIdle, isRunning, timeout, startTime, className } = state;
+    return {
+      isIdle,
+      isRunning,
+      timeout,
+      startTime,
+      className,
+      run,
+      stop,
+      activate,
+    };
+    // I only want to depend on a few properties of state,
+    // not on the whole of it
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [
+    state.isIdle,
+    state.isRunning,
+    state.timeout,
+    state.startTime,
+    run,
+    stop,
+    activate,
+  ]);
   return (
-    <IdleMonitorContext.Provider value={state}>
-      <div className={className} {...listenTo}>
+    <IdleMonitorContext.Provider value={context}>
+      <div className={state.className} {...listenTo}>
         {children}
       </div>
     </IdleMonitorContext.Provider>
