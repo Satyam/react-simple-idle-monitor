@@ -34,7 +34,7 @@ function DispatchActions({
       startTime: st.current,
       now: Date.now(),
     });
-  }, [isIdle, dispatch, reduxActionPrefix]);
+  }, [isIdle, dispatch, reduxActionPrefix, isRunning]);
 
   useEffect(() => {
     isMounted.current = true;

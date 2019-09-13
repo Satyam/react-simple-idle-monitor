@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import { act } from '@testing-library/react';
 
 /* eslint "@typescript-eslint/no-namespace": 0 */

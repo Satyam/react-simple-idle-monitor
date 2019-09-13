@@ -21,14 +21,14 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
     if (!isMounted.current) return;
     if (isRunning) {
       /* istanbul ignore else */
-      if (typeof onRun == 'function')
+      if (typeof onRun === 'function')
         onRun({
           startTime: st.current,
           now: Date.now(),
         });
     } else {
       /* istanbul ignore else */
-      if (typeof onStop == 'function')
+      if (typeof onStop === 'function')
         onStop({
           startTime: st.current,
           now: Date.now(),
@@ -40,19 +40,22 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
     if (!isMounted.current || !isRunning) return;
     if (isIdle) {
       /* istanbul ignore else */
-      if (typeof onIdle == 'function')
+      if (typeof onIdle === 'function')
         onIdle({
           startTime: st.current,
           now: Date.now(),
         });
     } else {
       /* istanbul ignore else */
-      if (typeof onActive == 'function')
+      if (typeof onActive === 'function')
         onActive({
           startTime: st.current,
           now: Date.now(),
         });
     }
+    // isRunning is missing because I don't want this to be triggered
+    // when it changed, though I do want to check it when others change
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [isIdle, onIdle, onActive]);
 
   useEffect(() => {

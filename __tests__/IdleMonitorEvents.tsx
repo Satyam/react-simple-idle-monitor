@@ -251,7 +251,7 @@ describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
       const onIdle = jest.fn();
 
       function Wrap4(): JSX.Element | null {
-        const { activate, run } = useIdleMonitor();
+        const { activate } = useIdleMonitor();
         useEffect(() => {
           setTimeout(() => {
             act(() => activate(false));
