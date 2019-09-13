@@ -28,7 +28,7 @@ function DispatchActions({
   }, [isRunning, dispatch, reduxActionPrefix]);
 
   useEffect(() => {
-    if (!isMounted.current) return;
+    if (!isMounted.current || !isRunning) return;
     dispatch({
       type: `${reduxActionPrefix}_${isIdle ? 'idle' : 'active'}`,
       startTime: st.current,

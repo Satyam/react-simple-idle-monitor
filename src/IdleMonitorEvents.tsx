@@ -37,7 +37,7 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
   }, [isRunning, onRun, onStop]);
 
   useEffect(() => {
-    if (!isMounted.current) return;
+    if (!isMounted.current || !isRunning) return;
     if (isIdle) {
       /* istanbul ignore else */
       if (typeof onIdle == 'function')
