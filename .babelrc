@@ -14,5 +14,6 @@
         "allExtensions": true
       }
     ]
-  ]
+  ],
+  "minified": true
 }
