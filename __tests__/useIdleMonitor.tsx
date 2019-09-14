@@ -290,15 +290,15 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
   });
 
   describe('Functions', () => {
-    test('activate(false)', () => {
+    test('force idle', () => {
       function ActivateFalse(): React.ReactElement | null {
-        const { activate } = useIdleMonitor();
+        const { idle } = useIdleMonitor();
         useEffect(() => {
           setTimeout(() => {
             afterAWhile(HALF_SECOND);
-            act(() => activate(false));
+            act(() => idle());
           }, HALF_SECOND); // less than a second
-        }, [activate]);
+        }, [idle]);
         return null;
       }
       const { getByTestId } = render(

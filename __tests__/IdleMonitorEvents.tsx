@@ -209,15 +209,15 @@ describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
       const onIdle = jest.fn();
 
       function Wrap3(): JSX.Element | null {
-        const { activate } = useIdleMonitor();
+        const { idle, activate } = useIdleMonitor();
         useEffect(() => {
           setTimeout(() => {
-            act(() => activate(false));
+            act(() => idle());
           }, HALF_SECOND);
           setTimeout(() => {
             act(() => activate());
           }, SECOND + HALF_SECOND);
-        }, [activate]);
+        }, [idle, activate]);
         return null;
       }
 
@@ -251,15 +251,15 @@ describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
       const onIdle = jest.fn();
 
       function Wrap4(): JSX.Element | null {
-        const { activate } = useIdleMonitor();
+        const { activate, idle } = useIdleMonitor();
         useEffect(() => {
           setTimeout(() => {
-            act(() => activate(false));
+            act(() => idle());
           }, HALF_SECOND);
           setTimeout(() => {
             act(() => activate());
           }, SECOND + HALF_SECOND);
-        }, [activate]);
+        }, [activate, idle]);
         return null;
       }
 

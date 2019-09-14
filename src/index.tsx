@@ -49,10 +49,14 @@ type IdleMonitorContext = {
    * If `isIdle==true`, it will switch to not-idle (active).
    * If already active, it will re-start the timeout counter
    * with the given timeout or the default set in the `timeout` property.
-   * If called with `false` (i.e. `activate(false)`, not *falsy*),
-   * it will turn idle.
    */
-  activate: (timeout?: number | false) => void;
+  activate: (timeout?: number) => void;
+
+  /**
+   * It will switch to an idling state (`isIdle=== true`),
+   * just as if the timeout had passed.
+   */
+  idle: () => void;
 
   /**
    * It will get the idle monitor running.
@@ -95,6 +99,7 @@ const initialContextValues = {
   startTime: 0,
   className: undefined,
   activate: notReady,
+  idle: notReady,
   run: notReady,
   stop: notReady,
   _clientX: 0,
@@ -315,11 +320,11 @@ const IdleMonitor = ({
     });
   }, [dispatch]);
 
-  const setIdle = useCallback((): void => {
+  const idle = useCallback((): void => {
     dispatch({ type: Action.Idle });
   }, [dispatch]);
 
-  const setActive = useCallback(
+  const activate = useCallback(
     (timeout?: number): void => {
       dispatch({
         type: Action.Active,
@@ -327,17 +332,6 @@ const IdleMonitor = ({
       });
     },
     [dispatch]
-  );
-
-  const activate = useCallback(
-    (newTimeout?: number | false): void => {
-      if (newTimeout === false) {
-        setIdle();
-      } else {
-        setActive(newTimeout);
-      }
-    },
-    [setIdle, setActive]
   );
 
   const onEventHandler = useCallback(
@@ -367,12 +361,12 @@ const IdleMonitor = ({
   useEffect(() => {
     if (!isMounted.current) return;
     if (state._setTimer) {
-      timerId.current = setTimeout(setIdle, state._setTimer);
+      timerId.current = setTimeout(idle, state._setTimer);
       return (): void => {
         clearTimeout(timerId.current);
       };
     }
-  }, [state._setTimer, setIdle]);
+  }, [state._setTimer, idle]);
 
   useEffect(() => {
     if (enabled) {
@@ -412,6 +406,7 @@ const IdleMonitor = ({
       run,
       stop,
       activate,
+      idle,
     };
     // I only want to depend on a few properties of state,
     // not on the whole of it
@@ -424,6 +419,7 @@ const IdleMonitor = ({
     run,
     stop,
     activate,
+    idle,
   ]);
   return (
     <IdleMonitorContext.Provider value={context}>
