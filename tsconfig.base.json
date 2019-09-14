@@ -9,11 +9,5 @@
     "declaration": true,
     "declarationDir": "./lib",
     "moduleResolution": "node"
-  },
-  "include": [
-    "./src/*.tsx",
-    "./jest.config.js",
-    "./__tests__/*.tsx",
-    "./examples/*.tsx"
-  ]
+  }
 }

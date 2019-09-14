@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.base.json",
+  "include": ["./*.tsx"],
+  "compilerOptions": {
+    "noEmit": true,
+    "declarationDir": "./dist"
+    // "moduleResolution": "node"
+  }
+}

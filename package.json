@@ -9,14 +9,14 @@
   ],
   "scripts": {
     "test": "jest",
-    "lint": "eslint --ext .jsx,.js,.tsx,.ts ./src ./__tests__",
+    "lint": "eslint --ext .jsx,.js,.tsx,.ts ./src ./__tests__ ./examples/*.tsx",
     "build": "babel src -d lib -x .tsx",
     "preversion": "npm test && npm run lint",
     "version": "npm run build && npm run declarations",
     "postversion": "git push && git push --tags",
     "prettier": "prettier --write ./src/*.tsx ./__tests__/index.tsx",
     "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
-    "declarations": "tsc --emitDeclarationOnly",
+    "declarations": "tsc --emitDeclarationOnly --project ./src",
     "examples": "npm run build && parcel examples/index.html --out-dir examples/dist --cache-dir examples/cache"
   },
   "repository": {
