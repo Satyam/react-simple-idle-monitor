@@ -1,7 +1,7 @@
 import React from 'react';
 import IdleMonitor from '../';
 
-function UsingClassNames() {
+function UsingClassNames(): JSX.Element {
   return (
     <div className="UsingClassNames">
       <IdleMonitor timeout={3000} activeClassName="active" idleClassName="idle">

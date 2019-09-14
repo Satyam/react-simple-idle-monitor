@@ -3,21 +3,25 @@ import IdleMonitorEvents from '../lib/IdleMonitorEvents';
 
 const digitsShown = 100000;
 
-function eventLog(type) {
-  return state => {
+function eventLog(type): (state: { now: number; startTime: number }) => void {
+  return (state): void => {
     const entry = {
       type,
       ...state,
     };
-    console.log('event', entry);
+    // console.log('event', entry);
     const eventLog = document.getElementById('eventLog');
-    eventLog.innerHTML += `\ntype: ${entry.type}, startTime: ${entry.startTime %
-      digitsShown}, now: ${entry.now % digitsShown}`;
-    eventLog.scrollTop = eventLog.scrollHeight;
+    if (eventLog) {
+      eventLog.innerHTML += `\ntype: ${
+        entry.type
+      }, startTime: ${entry.startTime % digitsShown}, now: ${entry.now %
+        digitsShown}`;
+      eventLog.scrollTop = eventLog.scrollHeight;
+    }
   };
 }
 
-function UsingEvents() {
+function UsingEvents(): JSX.Element {
   return (
     <div className="UsingEvents">
       <IdleMonitorEvents

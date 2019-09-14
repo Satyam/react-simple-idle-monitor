@@ -3,15 +3,19 @@ import IdleMonitorRedux from '../lib/IdleMonitorRedux';
 
 const digitsShown = 100000;
 
-function dispatch(action) {
-  console.log('action', action);
+function dispatch(action): void {
+  // console.log('action', action);
   const reduxLog = document.getElementById('reduxLog');
-  reduxLog.innerHTML += `\ntype: ${action.type}, startTime: ${action.startTime %
-    digitsShown}, now: ${action.now % digitsShown}`;
-  reduxLog.scrollTop = reduxLog.scrollHeight;
+  if (reduxLog) {
+    reduxLog.innerHTML += `\ntype: ${
+      action.type
+    }, startTime: ${action.startTime % digitsShown}, now: ${action.now %
+      digitsShown}`;
+    reduxLog.scrollTop = reduxLog.scrollHeight;
+  }
 }
 
-function UsingRedux() {
+function UsingRedux(): JSX.Element {
   return (
     <div className="UsingRedux">
       <IdleMonitorRedux

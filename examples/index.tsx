@@ -6,7 +6,7 @@ import UsingRedux from './UsingRedux';
 import UsingEvents from './UsingEvents';
 import UsingHooks from './UsingHooks';
 
-function App() {
+function App(): JSX.Element {
   return (
     <>
       <UsingClassNames />

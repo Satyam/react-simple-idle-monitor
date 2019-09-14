@@ -3,7 +3,7 @@ import IdleMonitor, { useIdleMonitor } from '../';
 
 const digitsShown = 100000;
 
-function IdleMonitorStatus() {
+function IdleMonitorStatus(): JSX.Element {
   const { isIdle, isRunning, timeout, startTime } = useIdleMonitor();
 
   return (
@@ -15,13 +15,13 @@ function IdleMonitorStatus() {
     </div>
   );
 }
-function IdleMonitorActions() {
-  const { activate, run, stop } = useIdleMonitor();
+function IdleMonitorActions(): JSX.Element {
+  const { activate, idle, run, stop } = useIdleMonitor();
 
   return (
     <div className="actions">
       <button
-        onClick={ev => {
+        onClick={(ev: React.MouseEvent): void => {
           ev.stopPropagation();
           run();
         }}
@@ -29,7 +29,7 @@ function IdleMonitorActions() {
         Run (no args)
       </button>
       <button
-        onClick={ev => {
+        onClick={(ev: React.MouseEvent): void => {
           ev.stopPropagation();
           run(10000);
         }}
@@ -37,7 +37,7 @@ function IdleMonitorActions() {
         Run for 10 secs
       </button>
       <button
-        onClick={ev => {
+        onClick={(ev: React.MouseEvent): void => {
           ev.stopPropagation();
           stop();
         }}
@@ -45,7 +45,7 @@ function IdleMonitorActions() {
         Stop
       </button>
       <button
-        onClick={ev => {
+        onClick={(ev: React.MouseEvent): void => {
           ev.stopPropagation();
           activate();
         }}
@@ -53,15 +53,15 @@ function IdleMonitorActions() {
         Activate (no args)
       </button>
       <button
-        onClick={ev => {
+        onClick={(ev: React.MouseEvent): void => {
           ev.stopPropagation();
-          activate(false);
+          idle();
         }}
       >
-        Activate (false)
+        Idle
       </button>
       <button
-        onClick={ev => {
+        onClick={(ev: React.MouseEvent): void => {
           ev.stopPropagation();
           activate(5000);
         }}
@@ -71,7 +71,7 @@ function IdleMonitorActions() {
     </div>
   );
 }
-function UsingHooks() {
+function UsingHooks(): JSX.Element {
   return (
     <div className="UsingHooks">
       <IdleMonitor timeout={3000}>
@@ -86,7 +86,7 @@ function UsingHooks() {
           the button you mean to click.
         </p>
         <p>
-          The click itself won't be detected as activity (thanks to{' '}
+          The click itself won&apos;t be detected as activity (thanks to{' '}
           <code>ev.stopPropagation()</code>) but moving into the button will.
         </p>
       </IdleMonitor>
