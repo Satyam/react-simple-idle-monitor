@@ -1,5 +1,5 @@
 import React from 'react';
-import IdleMonitorEvents from '../lib/IdleMonitorEvents';
+import IdleMonitorEvents from 'react-simple-idle-monitor/IdleMonitorEvents.js';
 
 const digitsShown = 100000;
 

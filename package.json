@@ -7,6 +7,9 @@
   "files": [
     "lib/*"
   ],
+  "alias": {
+    "react-simple-idle-monitor": "./lib"
+  },
   "scripts": {
     "test": "jest",
     "lint": "eslint --ext .jsx,.js,.tsx,.ts ./src ./__tests__ ./examples/*.tsx",
@@ -51,7 +54,7 @@
     "@typescript-eslint/eslint-plugin": "^2.0.0",
     "@typescript-eslint/parser": "^2.0.0",
     "babel-jest": "^24.8.0",
-    "eslint": "^5.0.0",
+    "eslint": "^6.4.0",
     "eslint-config-prettier": "^6.1.0",
     "eslint-plugin-react": "^7.9.1",
     "eslint-plugin-react-hooks": "^2.0.1",
@@ -66,6 +69,7 @@
   "dependencies": {
     "@types/prop-types": "^15.7.1",
     "@types/react": "^16.9.2",
-    "@types/react-dom": "^16.9.0"
+    "@types/react-dom": "^16.9.0",
+    "lib": "^4.0.5"
   }
 }

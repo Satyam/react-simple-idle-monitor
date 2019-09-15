@@ -8,6 +8,7 @@
     "jsx": "react",
     "declaration": true,
     "declarationDir": "./lib",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "baseUrl": "./"
   }
 }

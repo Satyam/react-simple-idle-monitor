@@ -1,5 +1,5 @@
 import React from 'react';
-import IdleMonitorRedux from '../lib/IdleMonitorRedux';
+import IdleMonitorRedux from 'react-simple-idle-monitor/IdleMonitorRedux.js';
 
 const digitsShown = 100000;
 

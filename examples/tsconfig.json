@@ -1,9 +1,21 @@
 {
-  "extends": "../tsconfig.base.json",
+  // Parcel ignores the extends options so it has to be copied over
+  // "extends": "../tsconfig.base.json",
   "include": ["./*.tsx"],
   "compilerOptions": {
     "noEmit": true,
-    "declarationDir": "./dist"
-    // "moduleResolution": "node"
+    "declarationDir": "./dist",
+    "paths": {
+      "react-simple-idle-monitor*": ["./lib*"]
+    },
+    // Copied over, skipping duplicates from the above
+    "strictNullChecks": true,
+    "module": "es6",
+    "target": "es6",
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react",
+    "declaration": true,
+    "moduleResolution": "node",
+    "baseUrl": "../"
   }
 }
