@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import IdleMonitor, { useIdleMonitor, IdleMonitorProps } from './';
 
 type FireEventsType = {
@@ -97,3 +98,16 @@ export function IdleMonitorEvents({
 }
 
 export default IdleMonitorEvents;
+
+IdleMonitorEvents.propTypes = {
+  timeout: PropTypes.number,
+  events: PropTypes.arrayOf(PropTypes.string),
+  children: PropTypes.node.isRequired,
+  enabled: PropTypes.bool,
+  activeClassName: PropTypes.string,
+  idleClassName: PropTypes.string,
+  onRun: PropTypes.func,
+  onStop: PropTypes.func,
+  onIdle: PropTypes.func,
+  onActive: PropTypes.func,
+};

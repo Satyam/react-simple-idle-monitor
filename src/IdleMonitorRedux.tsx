@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import IdleMonitor, { useIdleMonitor, IdleMonitorProps } from './';
 
 type DispatchActionsType = {
@@ -69,3 +70,14 @@ export function IdleMonitorRedux({
 }
 
 export default IdleMonitorRedux;
+
+IdleMonitorRedux.propTypes = {
+  timeout: PropTypes.number,
+  events: PropTypes.arrayOf(PropTypes.string),
+  children: PropTypes.node.isRequired,
+  enabled: PropTypes.bool,
+  activeClassName: PropTypes.string,
+  idleClassName: PropTypes.string,
+  dispatch: PropTypes.func.isRequired,
+  reduxActionPrefix: PropTypes.string.isRequired,
+};
