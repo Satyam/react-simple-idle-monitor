@@ -6,7 +6,7 @@
     "noEmit": true,
     "declarationDir": "./dist",
     "paths": {
-      "react-simple-idle-monitor*": ["./lib*"]
+      "react-simple-idle-monitor*": ["./*"]
     },
     // Copied over, skipping duplicates from the above
     "strictNullChecks": true,

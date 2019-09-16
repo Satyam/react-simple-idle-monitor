@@ -1,5 +1,5 @@
 import React from 'react';
-import IdleMonitor from 'react-simple-idle-monitor/index.js';
+import IdleMonitor from 'react-simple-idle-monitor/';
 
 function UsingClassNames(): JSX.Element {
   return (

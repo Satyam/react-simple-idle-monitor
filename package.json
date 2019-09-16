@@ -8,7 +8,7 @@
     "lib/*"
   ],
   "alias": {
-    "react-simple-idle-monitor": "./lib"
+    "react-simple-idle-monitor": "./"
   },
   "scripts": {
     "test": "jest",
