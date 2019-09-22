@@ -36,7 +36,8 @@ export default class IdleMonitor extends Component {
     }
   }
 
-  componentWillReceiveProps(nextProps) {
+  /* eslint-disable-next-line */
+  UNSAFE_componentWillReceiveProps(nextProps) {
     const { enabled: nextEnabled, timeout: nextTimeout } = nextProps;
     const { enabled, timeout } = this.props;
 
@@ -59,7 +60,7 @@ export default class IdleMonitor extends Component {
 
     /* The only time there is no element is when doing server-side rendering,
      * and in such a case, there can be no unmounting
-    */
+     */
     /* istanbul ignore if */
     if (!element) return;
     this.stop();
@@ -197,9 +198,7 @@ export default class IdleMonitor extends Component {
     const { hasClassName, className } = this.state;
 
     return hasClassName ? (
-      <div className={className}>
-        {children || null}
-      </div>
+      <div className={className}>{children || null}</div>
     ) : (
       children || null
     );
