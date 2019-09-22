@@ -11,7 +11,7 @@ Optionally triggers various possible actions when the idle state changes.
 
 ## Releases
 
-The current v1.0.0 is only partly compatible with the previous [v.0.3.3](https://github.com/Satyam/react-simple-idle-monitor/tree/v0.3.3) which has maintained compatibility all along.
+The current v1.0.0-beta.0 is only partly compatible with the previous [v.0.3.3](https://github.com/Satyam/react-simple-idle-monitor/tree/v0.3.3) which has maintained compatibility all along.
 
 Please check the [CHANGELOG.md](https://github.com/Satyam/react-simple-idle-monitor/blob/master/CHANGELOG.md) file for differences.
 
@@ -300,7 +300,7 @@ All actions have properties:
 
 #### `dispatch`
 
-A function that will receive an object as described above. It is expected to be the `dispatch` function from React-Redux but it might as well be any other function taking an object, such as that resulting from calling React's `useReducer` hook. The component doesn't check the return of calling `dispatch` nor does it wait should it return a Promise.
+A function that will receive an object as described above. It is expected to be the `dispatch` function from React-Redux but it might as well be any other function taking an object, such as that resulting from calling React `useReducer` hook. The component doesn't check the return of calling `dispatch` nor does it wait should it return a Promise.
 
 ### `IdleMonitorEvents`
 

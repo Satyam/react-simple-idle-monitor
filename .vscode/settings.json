@@ -1,0 +1,18 @@
+{
+  "cSpell.words": [
+    "activeclassname",
+    "classname",
+    "idleclassname",
+    "idlemonitorevents",
+    "idlemonitorredux",
+    "isidle",
+    "isrunning",
+    "onactive",
+    "onidle",
+    "onrun",
+    "onstop",
+    "reduxactionprefix",
+    "starttime",
+    "useidlemonitor"
+  ]
+}
