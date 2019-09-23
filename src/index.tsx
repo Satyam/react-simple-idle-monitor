@@ -12,8 +12,15 @@ import React, {
   useCallback,
   useRef,
   useMemo,
+  AllHTMLAttributes,
 } from 'react';
 import PropTypes from 'prop-types';
+
+declare let process: {
+  env: {
+    NODE_ENV: string;
+  };
+};
 
 type IdleMonitorContext = {
   /**
@@ -22,9 +29,9 @@ type IdleMonitorContext = {
   isIdle: boolean;
 
   /**
-   * false either before mounting or after unmounting,
-   * will turn true after first render if the `enabled` property
-   * is true.  Will change when `run` or `stop` is called (see below)
+   * false either before mounting or after un-mounting,
+   * will turn true after first render if not `disabled`.
+   * Will change when `run` or `stop` is called (see below)
    */
   isRunning: boolean;
 
@@ -43,7 +50,7 @@ type IdleMonitorContext = {
    * The current className set from either `activeClassName` or
    * `idleClassName` depending on the state
    */
-  className: string | undefined;
+  className: string;
 
   /**
    * If `isIdle==true`, it will switch to not-idle (active).
@@ -81,8 +88,8 @@ type InternalState = {
   _setTimer: number;
   _defaultTimeout: number;
   _currentTimeout: number;
-  _activeClassName: string | undefined;
-  _idleClassName: string | undefined;
+  _activeClassName: string;
+  _idleClassName: string;
 };
 
 // The following is a placeholder to keep TypeScript happy
@@ -97,7 +104,7 @@ const initialContextValues = {
   isRunning: false,
   timeout: 0,
   startTime: 0,
-  className: undefined,
+  className: '',
   activate: notReady,
   idle: notReady,
   run: notReady,
@@ -107,8 +114,8 @@ const initialContextValues = {
   _setTimer: 0,
   _defaultTimeout: 0,
   _currentTimeout: 0,
-  _activeClassName: undefined,
-  _idleClassName: undefined,
+  _activeClassName: '',
+  _idleClassName: '',
 };
 
 enum Action {
@@ -142,7 +149,7 @@ type IdleMonitorActions =
     }
   | { type: Action.SetTimeout; timeout: number };
 
-export type IdleMonitorProps = {
+export type IdleMonitorProps = AllHTMLAttributes<Element> & {
   /**
    * Number of milliseconds of inactivity to assume idleness.
    * defaults to 20 minutes
@@ -158,26 +165,15 @@ export type IdleMonitorProps = {
   events?: string[];
 
   /**
-   * As expected.  If not children are provided, the component will have no effect.
-   */
-  children: React.ReactNode;
-
-  /**
-   * It will set the monitor running.
-   * Defaults to `true`
-   */
-  enabled?: boolean;
-
-  /**
-   * If a value is set, a `<div>` element will surround the `children`
-   * with its `className` property set to the given value when the
+   * If a value is set, the `<div>` element that surrounds the `children`
+   * will have its `className` property set to the given value when the
    * UI is active (not-idle)
    */
   activeClassName?: string;
 
   /**
-   * If a value is set, a `<div>` element will surround the `children`
-   * with its `className` property set to the given value when the
+   * If a value is set, the `<div>` element surrounding the `children`
+   * will have its `className` property set to the given value when the
    * UI is idle (not-active)
    */
   idleClassName?: string;
@@ -293,9 +289,11 @@ const IdleMonitor = ({
     'onTouchStart',
   ],
   children,
-  enabled = true,
-  activeClassName,
-  idleClassName,
+  disabled = false,
+  activeClassName = '',
+  idleClassName = '',
+  className = '',
+  ...props
 }: IdleMonitorProps): JSX.Element => {
   const [state, dispatch] = useReducer(reducer, {
     ...initialContextValues,
@@ -304,6 +302,31 @@ const IdleMonitor = ({
     _idleClassName: idleClassName,
     _defaultTimeout: timeout,
   });
+
+  /* istanbul ignore else */
+  if (process.env.NODE_ENV !== 'production') {
+    const invalidProps = Object.keys(props).filter(
+      name => events.indexOf(name) !== -1
+    );
+    if (invalidProps.length) {
+      throw new Error(
+        `Cannot attach event handlers to [${invalidProps.join(
+          ', '
+        )}] because they are already monitored by IdleMonitor`
+      );
+    }
+    if (React.Children.count(children) === 0) {
+      throw new Error('IdleMonitor must enclose children');
+    }
+    if (!Array.isArray(events) || events.length === 0) {
+      throw new Error(
+        'A list of UI events to be monitored for activity must be supplied'
+      );
+    }
+    if (events.some(name => !/^on[A-Z]\w+/.test(name))) {
+      throw new Error('Events names must be in React Synthetic events format');
+    }
+  }
 
   const isMounted = useRef<boolean>(false);
 
@@ -344,10 +367,10 @@ const IdleMonitor = ({
 
   useEffect(() => {
     if (!isMounted.current) return;
-    if (enabled) {
-      run();
-    } else stop();
-  }, [enabled, run, stop]);
+    if (disabled) {
+      stop();
+    } else run();
+  }, [disabled, run, stop]);
 
   useEffect(() => {
     if (!isMounted.current) return;
@@ -369,10 +392,10 @@ const IdleMonitor = ({
   }, [state._setTimer, idle]);
 
   useEffect(() => {
-    if (enabled) {
-      run();
-    } else {
+    if (disabled) {
       stop();
+    } else {
+      run();
     }
     isMounted.current = true;
     return (): void => {
@@ -421,9 +444,14 @@ const IdleMonitor = ({
     activate,
     idle,
   ]);
+
   return (
     <IdleMonitorContext.Provider value={context}>
-      <div className={state.className} {...listenTo}>
+      <div
+        className={`${state.className} ${className}`.trim() || undefined}
+        {...props}
+        {...listenTo}
+      >
         {children}
       </div>
     </IdleMonitorContext.Provider>
@@ -440,7 +468,8 @@ IdleMonitor.propTypes = {
   timeout: PropTypes.number,
   events: PropTypes.arrayOf(PropTypes.string),
   children: PropTypes.node.isRequired,
-  enabled: PropTypes.bool,
+  disabled: PropTypes.bool,
   activeClassName: PropTypes.string,
   idleClassName: PropTypes.string,
+  className: PropTypes.string,
 };

@@ -264,7 +264,7 @@ describe('IdleMonitorEvents from react-simple-idle-monitor', () => {
       }
 
       render(
-        <IdleMonitorEvents onActive={onActive} onIdle={onIdle} enabled={false}>
+        <IdleMonitorEvents onActive={onActive} onIdle={onIdle} disabled>
           <Wrap4 />
         </IdleMonitorEvents>
       );

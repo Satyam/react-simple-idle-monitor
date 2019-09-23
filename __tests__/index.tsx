@@ -18,10 +18,10 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
 
         // The child enclosed in a plain <div>
         expect(container.firstChild).toMatchInlineSnapshot(`
-        <div>
-          Hello
-        </div>
-      `);
+                  <div>
+                    Hello
+                  </div>
+              `);
       });
 
       test('with children and activeClassName', () => {
@@ -30,12 +30,33 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
         );
         expect(container).toBeActive();
         expect(container.firstChild).toMatchInlineSnapshot(`
-        <div
-          class="active"
-        >
-          Hello
-        </div>
-      `);
+                  <div
+                    class="active"
+                  >
+                    Hello
+                  </div>
+              `);
+      });
+
+      test('with children, activeClassName and extra props', () => {
+        const { container } = render(
+          <IdleMonitor
+            activeClassName="active"
+            id="idyllic"
+            className="some extra class"
+          >
+            Hello
+          </IdleMonitor>
+        );
+        expect(container).toBeActive();
+        expect(container.firstChild).toMatchInlineSnapshot(`
+          <div
+            class="active some extra class"
+            id="idyllic"
+          >
+            Hello
+          </div>
+        `);
       });
 
       test('with children and idleClassName', () => {
@@ -46,19 +67,15 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
         // No classname on the <div> since it should start active
         // and no activeClassName given
         expect(container.firstChild).toMatchInlineSnapshot(`
-        <div>
-          Hello
-        </div>
-      `);
+                  <div>
+                    Hello
+                  </div>
+              `);
       });
 
       test('start disabled', () => {
         const { container } = render(
-          <IdleMonitor
-            enabled={false}
-            activeClassName="active"
-            idleClassName="idle"
-          >
+          <IdleMonitor disabled activeClassName="active" idleClassName="idle">
             Hello
           </IdleMonitor>
         );
@@ -66,12 +83,79 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
         // If disabled it should start as active.
         expect(container).toBeActive();
         expect(container.firstChild).toMatchInlineSnapshot(`
-        <div
-          class="active"
-        >
-          Hello
-        </div>
-      `);
+                  <div
+                    class="active"
+                  >
+                    Hello
+                  </div>
+              `);
+      });
+    });
+    describe('Force some errors', () => {
+      // To suppress the error message from the log:
+      let consoleError;
+      /* eslint-disable @typescript-eslint/unbound-method */
+      beforeAll(() => {
+        consoleError = console.error;
+        console.error = jest.fn();
+      });
+      afterAll(() => {
+        console.error = consoleError;
+      });
+      /* eslint-enable @typescript-eslint/unbound-method */
+
+      test('no children', () => {
+        expect(() => {
+          /* eslint-disable-next-line @typescript-eslint/ban-ts-ignore */
+          // @ts-ignore
+          render(<IdleMonitor />);
+        }).toThrowErrorMatchingInlineSnapshot(
+          `"IdleMonitor must enclose children"`
+        );
+      });
+
+      test('no events', () => {
+        expect(() => {
+          /* eslint-disable-next-line @typescript-eslint/ban-ts-ignore */
+          // @ts-ignore
+          render(<IdleMonitor events={true}>Hello</IdleMonitor>);
+        }).toThrowErrorMatchingInlineSnapshot(
+          `"A list of UI events to be monitored for activity must be supplied"`
+        );
+      });
+
+      test('empty events', () => {
+        expect(() => {
+          render(<IdleMonitor events={[]}>Hello</IdleMonitor>);
+        }).toThrowErrorMatchingInlineSnapshot(
+          `"A list of UI events to be monitored for activity must be supplied"`
+        );
+      });
+
+      test('bad event name', () => {
+        expect(() => {
+          render(<IdleMonitor events={['onclick']}>Hello</IdleMonitor>);
+        }).toThrowErrorMatchingInlineSnapshot(
+          `"Events names must be in React Synthetic events format"`
+        );
+      });
+
+      test('with children, activeClassName and invalid event', () => {
+        const handler = jest.fn();
+
+        expect(() => {
+          render(
+            <IdleMonitor
+              onMouseMove={handler}
+              onClick={handler}
+              onKeyDown={handler}
+            >
+              Hello
+            </IdleMonitor>
+          );
+        }).toThrowErrorMatchingInlineSnapshot(
+          `"Cannot attach event handlers to [onMouseMove, onKeyDown] because they are already monitored by IdleMonitor"`
+        );
       });
     });
 
@@ -82,10 +166,10 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
 
         // Nothing special would happen anyway
         expect(container.firstChild).toMatchInlineSnapshot(`
-        <div>
-          Hello
-        </div>
-      `);
+                  <div>
+                    Hello
+                  </div>
+              `);
       });
 
       test('with children, activeClassName and idleClassName', () => {
@@ -98,23 +182,23 @@ describe('IdleMonitor from react-simple-idle-monitor', () => {
         // it always start active, but not much else
         expect(container).toBeActive();
         expect(container.firstChild).toMatchInlineSnapshot(`
-        <div
-          class="active"
-        >
-          Hello
-        </div>
-      `);
+                  <div
+                    class="active"
+                  >
+                    Hello
+                  </div>
+              `);
         advanceTimers(LONG_TIME);
 
         // Then it should switch to idle
         expect(container).toBeIdle();
         expect(container.firstChild).toMatchInlineSnapshot(`
-        <div
-          class="idle"
-        >
-          Hello
-        </div>
-      `);
+                  <div
+                    class="idle"
+                  >
+                    Hello
+                  </div>
+              `);
         afterASecond();
         fireEvent.keyDown(getByText('Hello'), { key: 'Enter', code: 13 });
         expect(container).toBeActive();

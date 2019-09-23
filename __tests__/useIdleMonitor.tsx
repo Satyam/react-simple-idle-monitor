@@ -85,7 +85,7 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
 
     test('disabled', () => {
       const { getByTestId } = render(
-        <IdleMonitor enabled={false}>
+        <IdleMonitor disabled>
           <StatusConsumer />
         </IdleMonitor>
       );

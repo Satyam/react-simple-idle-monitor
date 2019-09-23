@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "Barreiro",
     "activeclassname",
     "classname",
     "idleclassname",
@@ -11,6 +12,8 @@
     "onidle",
     "onrun",
     "onstop",
+    "postversion",
+    "preversion",
     "reduxactionprefix",
     "starttime",
     "useidlemonitor"

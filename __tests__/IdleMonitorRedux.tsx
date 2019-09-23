@@ -146,17 +146,17 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
       const dispatch = jest.fn();
 
       function Wrap3(): JSX.Element {
-        const [enabled, setEnabled] = useState(true);
+        const [disabled, setDisabled] = useState(false);
         useEffect(() => {
           setTimeout(() => {
-            setEnabled(false);
+            setDisabled(true);
           }, HALF_SECOND);
         });
         return (
           <IdleMonitorRedux
             dispatch={dispatch}
             reduxActionPrefix={PREFIX}
-            enabled={enabled}
+            disabled={disabled}
           >
             Hello
           </IdleMonitorRedux>
@@ -188,17 +188,17 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
     test('`_stop` action should be dispatched when started disabled', () => {
       const dispatch = jest.fn();
       function Wrap4(): JSX.Element {
-        const [enabled, setEnabled] = useState(false);
+        const [disabled, setDisabled] = useState(true);
         useEffect(() => {
           setTimeout(() => {
-            setEnabled(true);
+            setDisabled(false);
           }, HALF_SECOND);
         });
         return (
           <IdleMonitorRedux
             dispatch={dispatch}
             reduxActionPrefix={PREFIX}
-            enabled={enabled}
+            disabled={disabled}
           >
             Hello
           </IdleMonitorRedux>
@@ -340,7 +340,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         <IdleMonitorRedux
           dispatch={dispatch}
           reduxActionPrefix={PREFIX}
-          enabled={false}
+          disabled
         >
           <Wrap4 />
         </IdleMonitorRedux>

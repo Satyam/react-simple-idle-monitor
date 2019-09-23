@@ -75,7 +75,7 @@ IdleMonitorRedux.propTypes = {
   timeout: PropTypes.number,
   events: PropTypes.arrayOf(PropTypes.string),
   children: PropTypes.node.isRequired,
-  enabled: PropTypes.bool,
+  disabled: PropTypes.bool,
   activeClassName: PropTypes.string,
   idleClassName: PropTypes.string,
   dispatch: PropTypes.func.isRequired,
