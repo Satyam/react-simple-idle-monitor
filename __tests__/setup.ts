@@ -16,7 +16,6 @@ export const EPOCH = 123000000;
 export const TIMEOUT = 1000 * 60 * 20;
 export const LONG_TIME = 100000000;
 export const SECOND = 1000;
-export const HALF_SECOND = SECOND / 2;
 
 export let now = EPOCH;
 
@@ -41,10 +40,6 @@ export function afterASecond(): void {
   Date.now = (): number => now;
 }
 
-export function afterAWhile(ms): void {
-  now += ms;
-  Date.now = (): number => now;
-}
 /* eslint-enable @typescript-eslint/unbound-method */
 
 expect.extend({

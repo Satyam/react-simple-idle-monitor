@@ -9,10 +9,8 @@ import {
   EPOCH,
   LONG_TIME,
   SECOND,
-  HALF_SECOND,
   advanceTimers,
   afterASecond,
-  afterAWhile,
   now,
 } from './setup';
 
@@ -295,9 +293,8 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
         const { idle } = useIdleMonitor();
         useEffect(() => {
           setTimeout(() => {
-            afterAWhile(HALF_SECOND);
             act(() => idle());
-          }, HALF_SECOND); // less than a second
+          }, SECOND);
         }, [idle]);
         return null;
       }
@@ -325,7 +322,7 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
         useEffect(() => {
           setTimeout(() => {
             act(() => activate());
-          }, LONG_TIME + HALF_SECOND);
+          }, LONG_TIME + SECOND);
         }, [activate]);
         return null;
       }
@@ -352,10 +349,6 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
         // Should become active
         isIdle: false,
         timeout: TIMEOUT,
-        // With real timers it would have been
-        //   startTime: EPOCH + LONG_TIME + HALF_SECOND
-        // but with fake timers, they jump when you advance them
-        // skipping in betweens.
         startTime: EPOCH + LONG_TIME + SECOND,
       });
     });
@@ -365,7 +358,7 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
         useEffect(() => {
           setTimeout(() => {
             act(() => activate(SECOND));
-          }, LONG_TIME + HALF_SECOND);
+          }, LONG_TIME + SECOND);
         }, [activate]);
         return null;
       }
@@ -393,10 +386,6 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
         isIdle: false,
         // It should run for just a second:
         timeout: SECOND,
-        // With real timers it would have been
-        //   startTime: EPOCH + LONG_TIME + HALF_SECOND
-        // but with fake timers, they jump when you advance them
-        // skipping in betweens.
         startTime: EPOCH + LONG_TIME + SECOND,
       });
     });
@@ -407,10 +396,10 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
         useEffect(() => {
           setTimeout(() => {
             act(() => stop());
-          }, HALF_SECOND);
+          }, SECOND);
           setTimeout(() => {
             act(() => run());
-          }, SECOND + HALF_SECOND);
+          }, 2 * SECOND);
         }, [run, stop]);
         return null;
       }
@@ -440,11 +429,50 @@ describe('useIdleMonitor from react-simple-idle-monitor', () => {
         // Always start active
         isIdle: false,
         timeout: TIMEOUT,
-        // With real timers it would have been
-        //   startTime: EPOCH + SECOND + HALF_SECOND
-        // but with fake timers, they jump when you advance them
-        // skipping in betweens.
-        startTime: EPOCH + SECOND + SECOND,
+        startTime: EPOCH + 2 * SECOND,
+      });
+    });
+
+    test('Run when already running', () => {
+      function StopStart(): JSX.Element | null {
+        const { run, stop } = useIdleMonitor();
+        useEffect(() => {
+          setTimeout(() => {
+            act(() => run());
+          }, SECOND);
+          setTimeout(() => {
+            act(() => run(TIMEOUT / 2));
+          }, 2 * SECOND);
+        }, [run, stop]);
+        return null;
+      }
+      const { getByTestId } = render(
+        <IdleMonitor>
+          <StatusConsumer />
+          <StopStart />
+        </IdleMonitor>
+      );
+
+      advanceTimers(SECOND);
+
+      expect(getByTestId('status')).toHaveFormValues({
+        // Should have stopped
+        isRunning: true,
+        // Always turns active when stopped
+        isIdle: false,
+        timeout: TIMEOUT,
+        startTime: EPOCH + SECOND,
+      });
+
+      advanceTimers(SECOND);
+
+      expect(getByTestId('status')).toHaveFormValues({
+        // Back to running
+        isRunning: true,
+        // Always start active
+        isIdle: false,
+        timeout: TIMEOUT / 2,
+        startTime: EPOCH + 2 * SECOND,
       });
     });
   });
