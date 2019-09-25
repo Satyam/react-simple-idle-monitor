@@ -19,46 +19,45 @@ function DispatchActions({
 }: DispatchActionsType): null {
   const { isRunning, isIdle, startTime, timeout } = useIdleMonitor();
   const isMounted = useRef(false);
-  const st = useRef(startTime);
-  const t = useRef(timeout);
 
-  useEffect(() => {
-    st.current = startTime;
-  }, [startTime]);
-
-  useEffect(() => {
-    t.current = timeout;
-  }, [timeout]);
+  const previous = useRef<{
+    isRunning: boolean;
+    isIdle: boolean;
+    startTime: number;
+    timeout: number;
+  }>({ isRunning: false, isIdle: false, startTime: 0, timeout: 0 });
 
   useEffect(() => {
     if (!isMounted.current) return;
-    dispatch({
-      type: `${reduxActionPrefix}_${isRunning ? 'run' : 'stop'}`,
-      startTime: st.current,
-      now: Date.now(),
-      timeout: t.current,
-    });
-  }, [isRunning, dispatch, reduxActionPrefix]);
+    const p = previous.current;
 
-  useEffect(() => {
-    if (!isMounted.current || !isRunning) return;
-    dispatch({
-      type: `${reduxActionPrefix}_${isIdle ? 'idle' : 'active'}`,
-      startTime: st.current,
-      now: Date.now(),
-      timeout: t.current,
-    });
-  }, [isIdle, dispatch, reduxActionPrefix, isRunning]);
+    const d = (type: string): void =>
+      dispatch({
+        type: `${reduxActionPrefix}_${type}`,
+        startTime,
+        now: Date.now(),
+        timeout,
+      });
+    if (p.isRunning !== isRunning) {
+      d(isRunning ? 'run' : 'stop');
+    } else if (p.isIdle !== isIdle) {
+      d(isIdle ? 'idle' : 'active');
+    } else {
+      d('active');
+    }
+    previous.current = { isRunning, isIdle, startTime, timeout };
+  }, [isRunning, isIdle, startTime, timeout, dispatch, reduxActionPrefix]);
 
   useEffect(() => {
     isMounted.current = true;
     return (): void => {
       isMounted.current = false;
+      const { startTime, timeout } = previous.current;
       dispatch({
         type: `${reduxActionPrefix}_stop`,
-        startTime: st.current,
+        startTime,
         now: Date.now(),
-        timeout: t.current,
+        timeout,
       });
     };
   }, [dispatch, reduxActionPrefix]);
@@ -66,12 +65,29 @@ function DispatchActions({
   return null;
 }
 
+declare const process: {
+  env: {
+    NODE_ENV: string;
+  };
+};
+
 export function IdleMonitorRedux({
   reduxActionPrefix,
   dispatch,
   children,
   ...props
 }: IdleMonitorProps & DispatchActionsType): JSX.Element {
+  /* istanbul ignore else */
+  if (process.env.NODE_ENV !== 'production') {
+    /* istanbul ignore else */
+    if (typeof dispatch !== 'function') {
+      throw new Error('dispatch attribute must be assigned a function');
+    }
+    /* istanbul ignore else */
+    if (typeof reduxActionPrefix !== 'string') {
+      throw new Error('reduxActionPrefix attribute must be assigned a string');
+    }
+  }
   return (
     <IdleMonitor {...props}>
       <DispatchActions

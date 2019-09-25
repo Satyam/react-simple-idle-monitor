@@ -18,61 +18,44 @@ type FireEventsType = {
 function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
   const { isRunning, isIdle, startTime, timeout } = useIdleMonitor();
   const isMounted = useRef(false);
-  const st = useRef(startTime);
-  const t = useRef(timeout);
 
-  useEffect(() => {
-    st.current = startTime;
-  }, [startTime]);
-
-  useEffect(() => {
-    t.current = timeout;
-  }, [timeout]);
+  const previous = useRef<{
+    isRunning: boolean;
+    isIdle: boolean;
+    startTime: number;
+    timeout: number;
+  }>({ isRunning: false, isIdle: false, startTime: 0, timeout: 0 });
 
   useEffect(() => {
     if (!isMounted.current) return;
-    if (isRunning) {
-      /* istanbul ignore else */
-      if (typeof onRun === 'function')
-        onRun({
-          startTime: st.current,
-          now: Date.now(),
-          timeout: t.current,
-        });
+    const p = previous.current;
+    const payload = {
+      startTime,
+      now: Date.now(),
+      timeout,
+    };
+    if (p.isRunning !== isRunning) {
+      if (isRunning) {
+        /* istanbul ignore else */
+        if (typeof onRun === 'function') onRun(payload);
+      } else {
+        /* istanbul ignore else */
+        if (typeof onStop === 'function') onStop(payload);
+      }
+    } else if (p.isIdle !== isIdle) {
+      if (isIdle) {
+        /* istanbul ignore else */
+        if (typeof onIdle === 'function') onIdle(payload);
+      } else {
+        /* istanbul ignore else */
+        if (typeof onActive === 'function') onActive(payload);
+      }
     } else {
       /* istanbul ignore else */
-      if (typeof onStop === 'function')
-        onStop({
-          startTime: st.current,
-          now: Date.now(),
-          timeout: t.current,
-        });
+      if (typeof onActive === 'function') onActive(payload);
     }
-  }, [isRunning, onRun, onStop]);
-
-  useEffect(() => {
-    if (!isMounted.current || !isRunning) return;
-    if (isIdle) {
-      /* istanbul ignore else */
-      if (typeof onIdle === 'function')
-        onIdle({
-          startTime: st.current,
-          now: Date.now(),
-          timeout: t.current,
-        });
-    } else {
-      /* istanbul ignore else */
-      if (typeof onActive === 'function')
-        onActive({
-          startTime: st.current,
-          now: Date.now(),
-          timeout: t.current,
-        });
-    }
-    // isRunning is missing because I don't want this to be triggered
-    // when it changed, though I do want to check it when others change
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  }, [isIdle, onIdle, onActive]);
+    previous.current = { isRunning, isIdle, startTime, timeout };
+  }, [isRunning, isIdle, startTime, timeout, onRun, onStop, onIdle, onActive]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -80,10 +63,11 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
       isMounted.current = false;
       /* istanbul ignore else */
       if (typeof onStop === 'function') {
+        const { startTime, timeout } = previous.current;
         onStop({
-          startTime: st.current,
+          startTime,
           now: Date.now(),
-          timeout: t.current,
+          timeout,
         });
       }
     };
@@ -91,6 +75,12 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
 
   return null;
 }
+
+declare const process: {
+  env: {
+    NODE_ENV: string;
+  };
+};
 
 export function IdleMonitorEvents({
   onRun,
@@ -100,6 +90,31 @@ export function IdleMonitorEvents({
   children,
   ...props
 }: IdleMonitorProps & FireEventsType): JSX.Element {
+  /* istanbul ignore else */
+  if (process.env.NODE_ENV !== 'production') {
+    /* istanbul ignore else */
+    if (onRun && typeof onRun !== 'function') {
+      throw new Error('onRun attribute must be assigned a function');
+    }
+    /* istanbul ignore else */
+    if (onStop && typeof onStop !== 'function') {
+      throw new Error('onStop attribute must be assigned a function');
+    }
+    /* istanbul ignore else */
+    if (onIdle && typeof onIdle !== 'function') {
+      throw new Error('onIdle attribute must be assigned a function');
+    }
+    /* istanbul ignore else */
+    if (onActive && typeof onActive !== 'function') {
+      throw new Error('onActive attribute must be assigned a function');
+    }
+    /* istanbul ignore else */
+    if (!onRun && !onStop && !onIdle && !onActive) {
+      throw new Error(
+        'At least one of the onXxxx attributes must be set, otherwise simply use IdleMonitor'
+      );
+    }
+  }
   return (
     <IdleMonitor {...props}>
       <FireEvents
