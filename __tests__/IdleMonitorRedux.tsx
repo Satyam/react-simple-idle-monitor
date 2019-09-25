@@ -5,14 +5,7 @@ import '@testing-library/jest-dom/extend-expect';
 import IdleMonitorRedux from '../src/IdleMonitorRedux';
 import { useIdleMonitor } from '../src/index';
 
-import {
-  EPOCH,
-  LONG_TIME,
-  SECOND,
-  HALF_SECOND,
-  advanceTimers,
-  now,
-} from './setup';
+import { EPOCH, LONG_TIME, SECOND, advanceTimers, now, TIMEOUT } from './setup';
 
 const PREFIX = 'redux_action';
 const ACTION_RUN = `${PREFIX}_run`;
@@ -35,6 +28,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         now: EPOCH,
         startTime: EPOCH,
         type: ACTION_RUN,
+        timeout: TIMEOUT,
       });
     });
 
@@ -57,6 +51,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         now: EPOCH + LONG_TIME,
         startTime: EPOCH,
         type: ACTION_IDLE,
+        timeout: TIMEOUT,
       });
     });
 
@@ -81,6 +76,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         now: EPOCH + LONG_TIME,
         startTime: EPOCH + LONG_TIME,
         type: ACTION_ACTIVE,
+        timeout: TIMEOUT,
       });
     });
 
@@ -108,10 +104,9 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         const [mounted, setMounted] = useState(true);
         useEffect(() => {
           setTimeout(() => {
-            // console.log('*** unmounting ***');
             setMounted(false);
-          }, HALF_SECOND);
-        });
+          }, SECOND);
+        }, []);
         return mounted ? (
           <IdleMonitorRedux dispatch={dispatch} reduxActionPrefix={PREFIX}>
             Hello
@@ -127,6 +122,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         now: EPOCH,
         startTime: EPOCH,
         type: ACTION_RUN,
+        timeout: TIMEOUT,
       });
 
       // clear the _run action
@@ -139,6 +135,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         now: EPOCH + SECOND,
         startTime: EPOCH,
         type: ACTION_STOP,
+        timeout: TIMEOUT,
       });
     });
 
@@ -150,8 +147,8 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         useEffect(() => {
           setTimeout(() => {
             setDisabled(true);
-          }, HALF_SECOND);
-        });
+          }, SECOND);
+        }, []);
         return (
           <IdleMonitorRedux
             dispatch={dispatch}
@@ -174,6 +171,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         now: EPOCH + SECOND,
         startTime: EPOCH,
         type: ACTION_STOP,
+        timeout: TIMEOUT,
       });
 
       // Nothing else should be dispatched while disabled
@@ -192,8 +190,8 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         useEffect(() => {
           setTimeout(() => {
             setDisabled(false);
-          }, HALF_SECOND);
-        });
+          }, SECOND);
+        }, []);
         return (
           <IdleMonitorRedux
             dispatch={dispatch}
@@ -215,6 +213,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         now: EPOCH + SECOND,
         startTime: EPOCH + SECOND,
         type: ACTION_RUN,
+        timeout: TIMEOUT,
       });
 
       // It should resume normal operation
@@ -226,6 +225,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         now: EPOCH + SECOND + LONG_TIME,
         startTime: EPOCH + SECOND,
         type: ACTION_IDLE,
+        timeout: TIMEOUT,
       });
     });
   });
@@ -239,10 +239,10 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         useEffect(() => {
           setTimeout(() => {
             act(() => stop());
-          }, HALF_SECOND);
+          }, SECOND);
           setTimeout(() => {
             act(() => run());
-          }, SECOND + HALF_SECOND);
+          }, 2 * SECOND);
         }, [run, stop]);
         return null;
       }
@@ -256,6 +256,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         startTime: EPOCH,
         now,
         type: ACTION_RUN,
+        timeout: TIMEOUT,
       });
 
       dispatch.mockClear();
@@ -266,6 +267,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         now: EPOCH + SECOND,
         startTime: EPOCH,
         type: ACTION_STOP,
+        timeout: TIMEOUT,
       });
 
       dispatch.mockClear();
@@ -273,9 +275,10 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
       advanceTimers(SECOND);
 
       expect(dispatch).toHaveBeenCalledWith({
-        now: EPOCH + SECOND + SECOND,
-        startTime: EPOCH + SECOND + SECOND,
+        now: EPOCH + 2 * SECOND,
+        startTime: EPOCH + 2 * SECOND,
         type: ACTION_RUN,
+        timeout: TIMEOUT,
       });
     });
 
@@ -287,10 +290,10 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         useEffect(() => {
           setTimeout(() => {
             act(() => idle());
-          }, HALF_SECOND);
+          }, SECOND);
           setTimeout(() => {
             act(() => activate());
-          }, SECOND + HALF_SECOND);
+          }, 2 * SECOND);
         }, [idle, activate]);
         return null;
       }
@@ -307,6 +310,7 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         now: EPOCH + SECOND,
         startTime: EPOCH,
         type: ACTION_IDLE,
+        timeout: TIMEOUT,
       });
 
       dispatch.mockClear();
@@ -314,9 +318,10 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
       advanceTimers(SECOND);
 
       expect(dispatch).toHaveBeenCalledWith({
-        now: EPOCH + SECOND + SECOND,
-        startTime: EPOCH + SECOND + SECOND,
+        now: EPOCH + 2 * SECOND,
+        startTime: EPOCH + 2 * SECOND,
         type: ACTION_ACTIVE,
+        timeout: TIMEOUT,
       });
     });
 
@@ -328,10 +333,10 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
         useEffect(() => {
           setTimeout(() => {
             act(() => idle());
-          }, HALF_SECOND);
+          }, SECOND);
           setTimeout(() => {
             act(() => activate());
-          }, SECOND + HALF_SECOND);
+          }, 2 * SECOND);
         }, [activate, idle]);
         return null;
       }
@@ -353,6 +358,128 @@ describe('IdleMonitorRedux from react-simple-idle-monitor', () => {
       advanceTimers(SECOND);
 
       expect(dispatch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('changes in timeout should be properly reported', () => {
+    test('onRun should be called with the proper timeout', () => {
+      const dispatch = jest.fn();
+      render(
+        <div>
+          <IdleMonitorRedux
+            dispatch={dispatch}
+            timeout={TIMEOUT / 2}
+            reduxActionPrefix={PREFIX}
+          >
+            Hello
+          </IdleMonitorRedux>
+        </div>
+      );
+      expect(dispatch).toHaveBeenCalledWith({
+        type: ACTION_RUN,
+        startTime: EPOCH,
+        now,
+        timeout: TIMEOUT / 2,
+      });
+    });
+
+    test('stop, restart and activate with new timeout', () => {
+      const dispatch = jest.fn();
+
+      function Wrap5(): JSX.Element | null {
+        const { stop, run, activate } = useIdleMonitor();
+        useEffect(() => {
+          setTimeout(() => {
+            act(() => stop());
+          }, SECOND);
+          setTimeout(() => {
+            act(() => run(TIMEOUT / 2));
+          }, 2 * SECOND);
+          setTimeout(() => {
+            act(() => activate(TIMEOUT / 4));
+          }, 3 * SECOND);
+        }, [run, stop, activate]);
+        return null;
+      }
+
+      render(
+        <IdleMonitorRedux dispatch={dispatch} reduxActionPrefix={PREFIX}>
+          <Wrap5 />
+        </IdleMonitorRedux>
+      );
+
+      expect(dispatch).toHaveBeenCalledWith({
+        type: ACTION_RUN,
+        startTime: EPOCH,
+        now,
+        timeout: TIMEOUT,
+      });
+
+      dispatch.mockClear();
+
+      advanceTimers(SECOND);
+
+      expect(dispatch).toHaveBeenCalledWith({
+        type: ACTION_STOP,
+        now: EPOCH + SECOND,
+        startTime: EPOCH,
+        timeout: TIMEOUT,
+      });
+
+      dispatch.mockClear();
+
+      advanceTimers(SECOND);
+
+      expect(dispatch).toHaveBeenCalledWith({
+        type: ACTION_RUN,
+        now: EPOCH + 2 * SECOND,
+        startTime: EPOCH + 2 * SECOND,
+        timeout: TIMEOUT / 2,
+      });
+
+      dispatch.mockClear();
+
+      advanceTimers(SECOND);
+
+      expect(dispatch).toHaveBeenCalledWith({
+        type: ACTION_ACTIVE,
+        now: EPOCH + 3 * SECOND,
+        startTime: EPOCH + 3 * SECOND,
+        timeout: TIMEOUT / 4,
+      });
+    });
+  });
+
+  describe('Force some errors', () => {
+    // To suppress the error message from the log:
+    let consoleError;
+    /* eslint-disable @typescript-eslint/unbound-method */
+    beforeAll(() => {
+      consoleError = console.error;
+      console.error = jest.fn();
+    });
+    afterAll(() => {
+      console.error = consoleError;
+    });
+    /* eslint-enable @typescript-eslint/unbound-method */
+
+    test('no dispatch nor prefix', () => {
+      expect(() => {
+        /* eslint-disable-next-line @typescript-eslint/ban-ts-ignore */
+        // @ts-ignore
+        render(<IdleMonitorRedux>Hello</IdleMonitorRedux>);
+      }).toThrowErrorMatchingInlineSnapshot(
+        `"dispatch attribute must be assigned a function"`
+      );
+    });
+    test('dispatch but no prefix', () => {
+      expect(() => {
+        /* eslint-disable-next-line @typescript-eslint/ban-ts-ignore */
+        // @ts-ignore
+        render(<IdleMonitorRedux dispatch={jest.fn()}>Hello</IdleMonitorRedux>);
+      }).toThrowErrorMatchingInlineSnapshot(
+        `"reduxActionPrefix attribute must be assigned a string"`
+      );
     });
   });
 });
