@@ -3,7 +3,9 @@ import IdleMonitorEvents from 'react-simple-idle-monitor/lib/IdleMonitorEvents.j
 
 const digitsShown = 100000;
 
-function eventLog(type): (state: { now: number; startTime: number }) => void {
+function eventLog(
+  type
+): (state: { now: number; startTime: number; timeout: number }) => void {
   return (state): void => {
     const entry = {
       type,
@@ -14,8 +16,8 @@ function eventLog(type): (state: { now: number; startTime: number }) => void {
     if (eventLog) {
       eventLog.innerHTML += `\ntype: ${
         entry.type
-      }, startTime: ${entry.startTime % digitsShown}, now: ${entry.now %
-        digitsShown}`;
+      }, startTime: ${entry.startTime % digitsShown}, timeout: ${entry.timeout %
+        digitsShown}, now: ${entry.now % digitsShown}`;
       eventLog.scrollTop = eventLog.scrollHeight;
     }
   };

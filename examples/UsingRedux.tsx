@@ -9,8 +9,8 @@ function dispatch(action): void {
   if (reduxLog) {
     reduxLog.innerHTML += `\ntype: ${
       action.type
-    }, startTime: ${action.startTime % digitsShown}, now: ${action.now %
-      digitsShown}`;
+    }, startTime: ${action.startTime % digitsShown}, timeout: ${action.timeout %
+      digitsShown}, now: ${action.now % digitsShown}`;
     reduxLog.scrollTop = reduxLog.scrollHeight;
   }
 }
