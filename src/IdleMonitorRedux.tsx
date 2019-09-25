@@ -2,22 +2,33 @@ import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import IdleMonitor, { useIdleMonitor, IdleMonitorProps } from './';
 
+export type IdleMonitorActionType = {
+  type: string;
+  startTime: number;
+  now: number;
+  timeout: number;
+};
 type DispatchActionsType = {
   reduxActionPrefix: string;
-  dispatch: (action: object) => void;
+  dispatch: (action: IdleMonitorActionType) => void;
 };
 
 function DispatchActions({
   reduxActionPrefix,
   dispatch,
 }: DispatchActionsType): null {
-  const { isRunning, isIdle, startTime } = useIdleMonitor();
+  const { isRunning, isIdle, startTime, timeout } = useIdleMonitor();
   const isMounted = useRef(false);
   const st = useRef(startTime);
+  const t = useRef(timeout);
 
   useEffect(() => {
     st.current = startTime;
   }, [startTime]);
+
+  useEffect(() => {
+    t.current = timeout;
+  }, [timeout]);
 
   useEffect(() => {
     if (!isMounted.current) return;
@@ -25,6 +36,7 @@ function DispatchActions({
       type: `${reduxActionPrefix}_${isRunning ? 'run' : 'stop'}`,
       startTime: st.current,
       now: Date.now(),
+      timeout: t.current,
     });
   }, [isRunning, dispatch, reduxActionPrefix]);
 
@@ -34,6 +46,7 @@ function DispatchActions({
       type: `${reduxActionPrefix}_${isIdle ? 'idle' : 'active'}`,
       startTime: st.current,
       now: Date.now(),
+      timeout: t.current,
     });
   }, [isIdle, dispatch, reduxActionPrefix, isRunning]);
 
@@ -45,6 +58,7 @@ function DispatchActions({
         type: `${reduxActionPrefix}_stop`,
         startTime: st.current,
         now: Date.now(),
+        timeout: t.current,
       });
     };
   }, [dispatch, reduxActionPrefix]);
@@ -72,12 +86,7 @@ export function IdleMonitorRedux({
 export default IdleMonitorRedux;
 
 IdleMonitorRedux.propTypes = {
-  timeout: PropTypes.number,
-  events: PropTypes.arrayOf(PropTypes.string),
-  children: PropTypes.node.isRequired,
-  disabled: PropTypes.bool,
-  activeClassName: PropTypes.string,
-  idleClassName: PropTypes.string,
+  ...IdleMonitor.propTypes,
   dispatch: PropTypes.func.isRequired,
   reduxActionPrefix: PropTypes.string.isRequired,
 };

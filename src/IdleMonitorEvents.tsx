@@ -2,21 +2,32 @@ import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import IdleMonitor, { useIdleMonitor, IdleMonitorProps } from './';
 
+export type IdleMonitorEventProps = {
+  startTime: number;
+  now: number;
+  timeout: number;
+};
+
 type FireEventsType = {
-  onRun?: ({ startTime, now }: { startTime: number; now: number }) => void;
-  onStop?: ({ startTime, now }: { startTime: number; now: number }) => void;
-  onIdle?: ({ startTime, now }: { startTime: number; now: number }) => void;
-  onActive?: ({ startTime, now }: { startTime: number; now: number }) => void;
+  onRun?: ({ startTime, now, timeout }: IdleMonitorEventProps) => void;
+  onStop?: ({ startTime, now, timeout }: IdleMonitorEventProps) => void;
+  onIdle?: ({ startTime, now, timeout }: IdleMonitorEventProps) => void;
+  onActive?: ({ startTime, now, timeout }: IdleMonitorEventProps) => void;
 };
 
 function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
-  const { isRunning, isIdle, startTime } = useIdleMonitor();
+  const { isRunning, isIdle, startTime, timeout } = useIdleMonitor();
   const isMounted = useRef(false);
   const st = useRef(startTime);
+  const t = useRef(timeout);
 
   useEffect(() => {
     st.current = startTime;
   }, [startTime]);
+
+  useEffect(() => {
+    t.current = timeout;
+  }, [timeout]);
 
   useEffect(() => {
     if (!isMounted.current) return;
@@ -26,6 +37,7 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
         onRun({
           startTime: st.current,
           now: Date.now(),
+          timeout: t.current,
         });
     } else {
       /* istanbul ignore else */
@@ -33,6 +45,7 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
         onStop({
           startTime: st.current,
           now: Date.now(),
+          timeout: t.current,
         });
     }
   }, [isRunning, onRun, onStop]);
@@ -45,6 +58,7 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
         onIdle({
           startTime: st.current,
           now: Date.now(),
+          timeout: t.current,
         });
     } else {
       /* istanbul ignore else */
@@ -52,6 +66,7 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
         onActive({
           startTime: st.current,
           now: Date.now(),
+          timeout: t.current,
         });
     }
     // isRunning is missing because I don't want this to be triggered
@@ -68,6 +83,7 @@ function FireEvents({ onRun, onStop, onIdle, onActive }: FireEventsType): null {
         onStop({
           startTime: st.current,
           now: Date.now(),
+          timeout: t.current,
         });
       }
     };
@@ -100,12 +116,7 @@ export function IdleMonitorEvents({
 export default IdleMonitorEvents;
 
 IdleMonitorEvents.propTypes = {
-  timeout: PropTypes.number,
-  events: PropTypes.arrayOf(PropTypes.string),
-  children: PropTypes.node.isRequired,
-  disabled: PropTypes.bool,
-  activeClassName: PropTypes.string,
-  idleClassName: PropTypes.string,
+  ...IdleMonitor.propTypes,
   onRun: PropTypes.func,
   onStop: PropTypes.func,
   onIdle: PropTypes.func,
