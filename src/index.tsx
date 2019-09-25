@@ -22,7 +22,7 @@ declare let process: {
   };
 };
 
-type IdleMonitorContext = {
+type IdleMonitorContextStatus = {
   /**
    * true when the timeout expired with no activity from the user
    */
@@ -51,7 +51,8 @@ type IdleMonitorContext = {
    * `idleClassName` depending on the state
    */
   className: string;
-
+};
+type IdleMonitorContextMethods = {
   /**
    * If `isIdle==true`, it will switch to not-idle (active).
    * If already active, it will re-start the timeout counter
@@ -81,6 +82,7 @@ type IdleMonitorContext = {
    */
   stop: () => void;
 };
+type IdleMonitorContext = IdleMonitorContextMethods & IdleMonitorContextStatus;
 
 type InternalState = {
   _clientX: number;
@@ -99,16 +101,12 @@ const notReady = (): void => {
   throw new Error('Idle Monitor not active yet');
 };
 
-const initialContextValues = {
+const initialContextStatusValues = {
   isIdle: false,
   isRunning: false,
   timeout: 0,
   startTime: 0,
   className: '',
-  activate: notReady,
-  idle: notReady,
-  run: notReady,
-  stop: notReady,
   _clientX: 0,
   _clientY: 0,
   _setTimer: 0,
@@ -116,6 +114,14 @@ const initialContextValues = {
   _currentTimeout: 0,
   _activeClassName: '',
   _idleClassName: '',
+};
+
+const initialContextValues = {
+  ...initialContextStatusValues,
+  activate: notReady,
+  idle: notReady,
+  run: notReady,
+  stop: notReady,
 };
 
 enum Action {
@@ -184,9 +190,9 @@ export const IdleMonitorContext = createContext<IdleMonitorContext>(
 );
 
 function reducer(
-  state: Readonly<IdleMonitorContext & InternalState>,
+  state: Readonly<IdleMonitorContextStatus & InternalState>,
   action: Readonly<IdleMonitorActions>
-): Readonly<IdleMonitorContext & InternalState> {
+): Readonly<IdleMonitorContextStatus & InternalState> {
   switch (action.type) {
     case Action.Run: {
       const t = action.timeout || state._defaultTimeout;
@@ -216,15 +222,17 @@ function reducer(
         className: state._idleClassName,
         _setTimer: 0,
       };
-    case Action.Active:
+    case Action.Active: {
+      const t = action.timeout || state._currentTimeout;
       return {
         ...state,
         isIdle: false,
         startTime: Date.now(),
-        timeout: action.timeout || state._currentTimeout,
+        timeout: t,
         className: state._activeClassName,
-        _setTimer: state._currentTimeout,
+        _setTimer: t,
       };
+    }
     case Action.Event: {
       if (!state.isRunning || !state.isIdle) return state;
       let clientX = state._clientX;
@@ -269,10 +277,11 @@ function reducer(
 }
 
 // const logReducer = (
-//   state: Readonly<IdleMonitorContext & InternalState>,
+//   state: Readonly<IdleMonitorContextStatus & InternalState>,
 //   action: Readonly<IdleMonitorActions>
-// ): Readonly<IdleMonitorContext & InternalState> => {
-//   console.log('----- before', state, action);
+// ): Readonly<IdleMonitorContextStatus & InternalState> => {
+//   console.log('----- action', action);
+//   console.log('----- before', state);
 //   const newState = reducer(state, action);
 //   console.log('----- after', newState);
 //   return newState;
@@ -296,7 +305,7 @@ const IdleMonitor = ({
   ...props
 }: IdleMonitorProps): JSX.Element => {
   const [state, dispatch] = useReducer(reducer, {
-    ...initialContextValues,
+    ...initialContextStatusValues,
     _activeClassName: activeClassName,
     className: activeClassName,
     _idleClassName: idleClassName,
