@@ -24,9 +24,11 @@ It is also written in TypeScript.
 It can do any or all of the following to indicate changes from active to idle and vice-versa:
 
 - **new** Provides a `useIdleMonitor` React custom hook to read status information and act upon the component.
+- Changes the `className` of the enclosing `div` element.
 - Fire events (when using [`IdleMonitorEvents`](#IdleMonitorEvents)).
 - Dispatch Redux actions (when using [`IdleMonitorRedux`](#IdleMonitorRedux)).
-- Change the `className` of the enclosing `div` element.
+
+The last two features were available in the core of the previous versions and are now provided by separate components, if needed.  The new `useIdleMonitor` hook is deemed much better and flexible.
 
 ## Table of Contents
 
@@ -48,10 +50,11 @@ It can do any or all of the following to indicate changes from active to idle an
       - [`idle`](#idle)
       - [`activate`](#activate)
     - [Properties](#properties)
-      - [`enabled` property](#enabled-property)
+      - [`disabled` property](#disabled-property)
       - [`timeout` property](#timeout-property)
       - [`events` property](#events-property)
       - [`activeClassName` and `idleClassName` properties](#activeclassname-and-idleclassname-properties)
+      - [Other properties](#other-properties)
   - [Migration](#migration)
     - [`IdleMonitorRedux`](#idlemonitorredux)
       - [`reduxActionPrefix`](#reduxactionprefix)
@@ -98,10 +101,10 @@ function App() {
 ReactDOM.render(<App />, document.getElementById('root'));
 ```
 
-`IdleMonitor` is a context provider but it also creates a single `<div>` element to which it attaches several UI event listeners, to detect user interaction, and also, if [classNames](#class-names) are provided, it will set the className according to the state.
+`IdleMonitor` is a context provider but it also creates a single `<div>` element to which it attaches several UI event listeners, to detect user interaction, and also, if [classNames](#class-names) are provided, it will set its className according to the state.
 
 `IdleMonitor` can be placed anywhere in the tree but then the UI activity detection will
-be limited to the enclosed screen area. There can also be several `IdleMonitor` components enclosing various areas, which will respond independently of one another. In such a case, each branch enclosed in each `IdleMonitor` follows the normal scoping rules for Context Providers.
+be limited to the enclosed screen area. There can also be several `IdleMonitor` components enclosing various separate areas, which will respond independently of one another. In such a case, each branch enclosed in each `IdleMonitor` follows the normal scoping rules for Context Providers.
 
 ### Class names
 
@@ -128,9 +131,9 @@ Will be rendered in either of the following two, depending on the state:
 <div class="UI-is-idle">.....</div>
 ```
 
-This value is also available through the [`className`](#classname) property in the context object, as described in the section further below.
+This value is also available through the [`className`](#classname) property from the `useIdleMonitor` hook as described in the next section.
 
-The default for both properties is `undefined`, resulting in no `className` set on the `<div>`. The values of these properties are set when mounted, changing them afterwards will not affect the resulting HTML.
+The default for both properties is an empty string, resulting in no `className` set on the `<div>`. The values of these properties are set when mounted, changing them afterwards will not affect the resulting HTML.
 
 ### `useIdleMonitor` hook.
 
@@ -146,17 +149,17 @@ For TypeScript users, `useIdleMonitor` returns an object of the `IdleMonitorCont
 
 #### `isIdle`
 
-A boolean, is `true` when no UI activity has been detected for the `timeout` period, signalling the application is in idle mode, otherwise it is active. `isIdle` is false when initially mounted and will also be false after un-mounting. Calling the [`idle`](#idle) and [`activate`](#activate) functions also affect its state.
+A boolean, it is `true` when no UI activity has been detected for the `timeout` period, signalling the application is in idle mode, otherwise it is active. `isIdle` is false when initially mounted and will also be false after un-mounting. Calling the [`idle`](#idle) and [`activate`](#activate) functions also affect its state.
 
 #### `isRunning`
 
-A boolean, it is `false` both right after mounting and after un-mounting. In both cases, `isIdle` will also be false. It will switch to `true` after the first render, if the [`enabled`](#enabled-property) property is true (the default). Calling the [`run`](#run) and [`stop`](#stop) functions will also affect its state.
+A boolean, it is `false` both right after mounting and after un-mounting. In both cases, `isIdle` will also be false. It will switch to `true` after the first render, if the [`disabled`](#disabled-property) property is not set (the default). Calling the [`run`](#run) and [`stop`](#stop) functions will also affect its state.
 
 #### `timeout`
 
 A number, in milliseconds, of the currently or last activity timer. It defaults to the [`timeout`](#timeout-property), but can be changed by calling [`run(newTimeout)`](#run) or [`activate(newTimeout)`](#activate).
 
-The property is not updated to reflect the remaining time for the current inactivity timer, as that would adversely impact the context consumers by forcing to re-render. See [`startTime`](#starttime) for a suggestion on how to calculate one, if needed.
+The property is not updated to reflect the remaining time for the current inactivity timer, as that would adversely impact the context consumers by forcing them to re-render. See [`startTime`](#starttime) next for a suggestion on how to calculate one, if needed.
 
 #### `startTime`
 
@@ -174,11 +177,11 @@ const remaining = isRunning && !isIdle
 
 #### `className`
 
-A string or `undefined`. If `isIdle === true`, `className` will be the value of [`idleClassName`](#activeclassname-and-idleclassname-properties), otherwise [`activeClassName`](#activeclassname-and-idleclassname-properties).
+A string. If `isIdle === true`, `className` will be the value of [`idleClassName`](#activeclassname-and-idleclassname-properties), otherwise [`activeClassName`](#activeclassname-and-idleclassname-properties). Either of them might be an empty string.
 
 #### `run`
 
-A function, it allows to start/re-start the monitor. It takes an optional number argument which will become the new timeout (in ms) for successive inactivity timers. If no argument is provided, it will restore the default [`timeout`](#timeout-property).
+A function, it allows to start the monitor. If it is already running, it will restart it. It takes an optional number argument representing the timeout (in ms) for this and  successive inactivity timers. If no argument is provided, it will restore the default [`timeout`](#timeout-property).
 
 Calling this function will result in:
 
@@ -209,7 +212,7 @@ Other properties remain unchanged and are mostly irrelevant.
 
 #### `activate`
 
-A function, will ensure the monitor is active. It will have no effect if [`isRunning`](#isrunning) is false. It will re-launch the inactivity timer as if a UI event had been detected. It will take an optional number argument which will become the new [`timeout`](#timeout) for the new inactivity timer. Unlike the `newTimeout` argument in [`run`](#run), the one given in `activate` will only be used for the current timer. It will result in:
+A function, will ensure the monitor is active. It will have no effect if [`isRunning`](#isrunning) is false. It will re-launch the inactivity timer as if a UI event had been detected. It will take an optional number argument which will become the new [`timeout`](#timeout) for the new inactivity timer. Unlike the `newTimeout` argument in [`run`](#run), the one given in `activate` will only be used for the current timer, successive timers will use the previous value. It will result in:
 
 - [`isIdle`](#isidle) === false
 - [`startTime`](#starttime) === `Date.now()`
@@ -220,21 +223,37 @@ A function, will ensure the monitor is active. It will have no effect if [`isRun
 
 `IdleMonitor` accepts the following properties.
 
-#### `enabled` property
+#### `disabled` property
 
-A boolean, defaults to `true`, if `false`, monitoring will not be running. The logic is reversed from what is customary (a `disabled` property would be more standard) for backward compatibility.
+A boolean, defaults to `false`, if `true`, monitoring will not be running. This property replaces the `enabled` property from previous versions as `disabled` is a standard property for HTML Elements.
+
+```jsx
+<IdleMonitor disabled>...</IdleMonitor>
+```
 
 #### `timeout` property
 
 A number, in milliseconds, to be used for the inactivity timer. It defaults to 20 minutes.
 
+```jsx
+<IdleMonitor timeout={10 * 60 * 1000 /* 10 minutes */}> ... </IdleMonitor>
+```
+
 #### `events` property
 
-An array of strings, represents the names of the events the monitor is to list to in order to detect user activity. They must be given in React [Synthetic Events](https://reactjs.org/docs/events.html#reference) format. The defaults cover keyboard, mouse, touch and wheel activity and rarely need overriding. This is a write-once property, changing it when `IdleMonitor` is already mounted will not affect the component.
+An array of strings, represents the names of the events the monitor is to listen to in order to detect user activity. They must be given in React [Synthetic Events](https://reactjs.org/docs/events.html#reference) format. The defaults cover keyboard, mouse, touch and wheel activity and rarely need overriding. This is a write-once property, changing it when `IdleMonitor` is already mounted will not affect the component.
+
+```jsx
+<IdleMonitor events={['onMouseMove', 'onKeyDown']}>...</IdleMonitor>
+```
 
 #### `activeClassName` and `idleClassName` properties
 
-Both string properties, they default to `undefined`. Their value will be assigned to the `className` property of the `<div>` wrapper rendered by the component and the [`className`](#classname) context property. They are both write-once, changing their value once the component is mounted will have no effect.
+Both string properties, they default to *falsy* (an empty string). Their value will be assigned to the `className` attribute of the `<div>` wrapper rendered by the component and the [`className`](#classname) context property. They are both write-once, changing their value once the component is mounted will have no effect.
+
+#### Other properties
+
+All other properties assigned to `IdleMonitor` will be passed on to the `<div>` it creates, except for `className` which will be appended to the classnames created by the component depending on the status.
 
 ## Migration
 
@@ -246,10 +265,14 @@ A few of the original features have been dropped or changed:
 
 - `element`: a DOM element on which to attach the events to detect UI activity. It defaulted to `document`. Now it attaches the events to the `<div>` created by the `IdleMonitor` component itself.
 - `events`: since it now uses React [Synthetic Events](https://reactjs.org/docs/events.html#reference) the name of the events should be given in proper React format.
+- `enabled`: A bad choice from the start, as its opposite, `disabled` is already a standard attribute on HTML Elements.
 
-Neither of these properties should be missed as the defaults would usually suffice.
+Neither of the first two properties should be missed as the defaults would usually suffice. `enabled` wasn't much used and, by now, should be totally obsolete as the [`run`](#run) and [`stop`](#stop) functions provided by the [`useIdleMonitor`](#useidlemonitor-hook) are much easier to use. It has been dropped in favor of `disabled` with the corresponding logic reversal.  It should be easy to refactor by doing the following replacements:
 
-Two extra helper components are available to provide for old features no longer available in the core component. These helpers have the following missing properties:
+*  `/\benabled={false}/g` with `disabled` 
+*  `/\benabled={([^}]+)}/g` with `disabled={!($1)}`
+
+Two extra helper components are available to provide for old features no longer available in the core component. These helpers add the following properties no longer in the core:
 
 - `dispatch` and `reduxActionPrefix` in [`IdleMonitorRedux`](#IdleMonitorRedux)
 - `onRun`, `onStop`, `onIdle` and `onActive` in [`IdleMonitorEvents`](#IdleMonitorEvents)
@@ -292,11 +315,14 @@ A string, defaults to `undefined`. Using the given _prefix_, `IdleMonitorRedux` 
 
 Actions are called as little as possible, i.e., re-starting a running monitor should not call the run action again.
 
+The component cannot distinguish in between a call to `run()` when it is already running from a call to `activate()` as the only difference in between the two is whether the optional `newTimeout` argument is persisted for future inactivity timers, an information not available throw the `useIdleMonitor` hook.  Both will be reported via an action of type _prefix_`_active`.
+
 All actions have properties:
 
 - `type`: as described above,
 - `startTime`: set to the timestamp (i.e.: milliseconds since epoch) when the most recent timeout started counting.
-- `now`: the timestamp when the event was triggered. This data is for backwards compatibility as it has always been the result of calling `Date.now()`.
+- `now`: the timestamp when the event was triggered. This data has always been mostly pointless, as the operation has always been synchronous, but is kept for backwards compatibility.
+- `timeout`: the value of the timeout for the operation.  It will be the `newTimeout` argument passed to the most recent call to [`activate`](#activate) or [`run`](#run), if any, the value set through the [`timeout`](#timeout-property) property or the default timeout (20 min) in milliseconds.
 
 #### `dispatch`
 
@@ -304,11 +330,11 @@ A function that will receive an object as described above. It is expected to be 
 
 ### `IdleMonitorEvents`
 
-`IdleMonitorEvents` is another wrapper around `IdleMonitor` so it has all its features plus the following properties which can be set to functions that will be called when state changes.
+`IdleMonitorEvents` is another wrapper around `IdleMonitor` so it has all its features plus the following properties which can be set to handler functions that will be called when state changes.
 
 #### `onRun`
 
-If the component has the [`enabled`](#enabled_property) property set (the default), it is fired immediately after mounted and whenever [`isRunning`](#isrunning) changes to true.
+If the component does not have the [`disabled`](#disabled_property) property set (the default), it is fired immediately after mounted and whenever [`isRunning`](#isrunning) changes to true.
 
 #### `onIdle`
 
@@ -322,9 +348,11 @@ It is called when [`isIdle`](#isidle) turns false.
 
 It is called when the components stops running, that is, [`isRunning`](#isrunning) turns false and also when unmounted.
 
-All events have the same `startTime` and `now` properties as described for the [Redux actions](#reduxActionPrefix).
+All events have the same `startTime`, `now` and `timeout` properties as described for the [Redux actions](#reduxActionPrefix).
 
 Unlike the earlier versions of the component (pre- v1.x), the `onActive` event will not receive the extra properties `event`, with the actual event causing activation or the `preventActive` method to prevent the activation, as it did before.
+
+The component cannot distinguish in between a call to `run()` when it is already running from a call to `activate()` as the only difference in between the two is whether the optional `newTimeout` argument is persisted for future inactivity timers, an information not available throw the `useIdleMonitor` hook.  Both will be reported via the `onActive` event.
 
 <!-- prettier-ignore -->
 ```js
