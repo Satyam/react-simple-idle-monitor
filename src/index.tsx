@@ -16,7 +16,7 @@ import React, {
 } from 'react';
 import PropTypes from 'prop-types';
 
-declare let process: {
+declare const process: {
   env: {
     NODE_ENV: string;
   };
@@ -216,13 +216,16 @@ function reducer(
         _setTimer: 0,
       };
     case Action.Idle:
+      if (!state.isRunning) return state;
       return {
         ...state,
         isIdle: true,
         className: state._idleClassName,
         _setTimer: 0,
       };
+
     case Action.Active: {
+      if (!state.isRunning) return state;
       const t = action.timeout || state._currentTimeout;
       return {
         ...state,
