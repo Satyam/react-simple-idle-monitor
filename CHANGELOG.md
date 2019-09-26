@@ -1,3 +1,12 @@
+# 1.0.0-next.1 (2019-09-25)
+
+- The `enabled` property has been replaced with `disabled` which is standard for HTML elements.
+- Both `IdleMonitorRedux` and `IdleMonitorEvents` report the timeout in their payloads.
+- Both have been re-written and are more simple and reliable
+- Code has been added to check the existence and type of parameters and throw errors when not in production mode.
+- The methods available in the hook are no longer kept in the internal state as they don't change and can be added at the end.
+- All extra properties passed on to the component are passed on to the `<div>` element, except for `className` which is properly appended to the class names generated.
+  
 # 1.0.0-next.0 (2019-09-21)
 
 Complete rewrite of the component. It uses React hooks and provides a `useIdleMonitor` hook to access its features. Written in TypeScript.
