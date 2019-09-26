@@ -6,12 +6,18 @@
 - Code has been added to check the existence and type of parameters and throw errors when not in production mode.
 - The methods available in the hook are no longer kept in the internal state as they don't change and can be added at the end.
 - All extra properties passed on to the component are passed on to the `<div>` element, except for `className` which is properly appended to the class names generated.
-  
+
 # 1.0.0-next.0 (2019-09-21)
 
 Complete rewrite of the component. It uses React hooks and provides a `useIdleMonitor` hook to access its features. Written in TypeScript.
 
 With the `useIdleMonitor` hook providing much more flexibility than the older interfaces, some of them (i.e.: Redux and Events interfaces) have been taken out of the core into separate components which wrap around the core `IdleMonitor`.
+
+## v0.4.1 (2019-09-26)
+
+- Added this file to the package.
+- Fixed: in ReadMe, the Travis-CI icon reports the status for this branch instead of _master_
+- Added: in ReadMe added link to [running issue](https://github.com/Satyam/react-simple-idle-monitor/issues/5) on the new V1.0.0 release
 
 ## v0.4.0 (2019-09-21)
 
