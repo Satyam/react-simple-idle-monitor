@@ -7,10 +7,6 @@
 Changes state to **idle** when a certain `timeout` is reached. Changes back to **active** when user interaction is detected.
 Optionally triggers various possible actions when the idle state changes.
 
-## New release
-
-A new [v1.0.0-next.1](https://www.npmjs.com/package/react-simple-idle-monitor/v/1.0.0-next.1) version is available for download and testing. A [running issue](https://github.com/Satyam/react-simple-idle-monitor/issues/5) has been created on GitHub to receive comments/suggestions.
-
 ## Features
 
 It can do any or all of the following to indicate changes from active to idle and vice-versa:
@@ -18,6 +14,10 @@ It can do any or all of the following to indicate changes from active to idle an
 - Fire events.
 - Dispatch Redux actions.
 - Change the `className` of the enclosing wrapper.
+
+## New release
+
+A new [v1.0.0-next.1](https://www.npmjs.com/package/react-simple-idle-monitor/v/1.0.0-next.1) version is available for download and testing. A [running issue](https://github.com/Satyam/react-simple-idle-monitor/issues/5) has been created on GitHub to receive comments/suggestions.
 
 ## Installation
 
