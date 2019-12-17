@@ -1,3 +1,9 @@
+# 1.0.0 (2019-12-18)
+
+Final release of the React hooks version of the package.
+
+No changes from the latest pre-release version except testing and building with the latest devDependencies as of the day of release.
+
 # 1.0.0-next.1 (2019-09-25)
 
 - The `enabled` property has been replaced with `disabled` which is standard for HTML elements.

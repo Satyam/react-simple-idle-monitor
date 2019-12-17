@@ -3,7 +3,7 @@
 
 > Simple monitor of idle time for React
 
-[![Build Status](https://travis-ci.org/Satyam/react-simple-idle-monitor.svg?branch=v1.0.0-next.1)](https://travis-ci.org/Satyam/react-simple-idle-monitor)
+[![Build Status](https://travis-ci.org/Satyam/react-simple-idle-monitor.svg?branch=v1.0.0)](https://travis-ci.org/Satyam/react-simple-idle-monitor)
 
 Changes state to **idle** when a certain `timeout` is reached. Changes back to **active** when user interaction is detected.
 
@@ -11,11 +11,9 @@ Optionally triggers various possible actions when the idle state changes.
 
 ## Releases
 
-The current v1.0.0-beta is only partly compatible with the previous [v.0.3.3](https://github.com/Satyam/react-simple-idle-monitor/tree/v0.3.3) which has maintained compatibility all along.
+The current v1.0.0 is only partly compatible with the previous [v.0.4.1](https://github.com/Satyam/react-simple-idle-monitor/tree/v0.4.1) which has maintained compatibility since first published.
 
 Please check the [CHANGELOG.md](https://github.com/Satyam/react-simple-idle-monitor/blob/master/CHANGELOG.md) file for differences.
-
-Please comment on the [running issue](https://github.com/Satyam/react-simple-idle-monitor/issues/5) at GitHub.
 
 The current version requires at least React 16.8 as it uses React Hooks and avoids the unsafe life-cycle methods it previously relied upon.
 
@@ -41,31 +39,31 @@ The last two features were available in the core of the previous versions and ar
   - [Installation](#installation)
   - [Usage](#usage)
     - [Class names](#class-names)
-    - [`useIdleMonitor` hook.](#useidlemonitor-hook)
-      - [`isIdle`](#isidle)
-      - [`isRunning`](#isrunning)
-      - [`timeout`](#timeout)
-      - [`startTime`](#starttime)
-      - [`className`](#classname)
-      - [`run`](#run)
-      - [`stop`](#stop)
-      - [`idle`](#idle)
-      - [`activate`](#activate)
+    - [useIdleMonitor hook.](#useidlemonitor-hook)
+      - [isIdle](#isidle)
+      - [isRunning](#isrunning)
+      - [timeout](#timeout)
+      - [startTime](#starttime)
+      - [className](#classname)
+      - [run](#run)
+      - [stop](#stop)
+      - [idle](#idle)
+      - [activate](#activate)
     - [Properties](#properties)
-      - [`disabled` property](#disabled-property)
-      - [`timeout` property](#timeout-property)
-      - [`events` property](#events-property)
-      - [`activeClassName` and `idleClassName` properties](#activeclassname-and-idleclassname-properties)
+      - [disabled property](#disabled-property)
+      - [timeout property](#timeout-property)
+      - [events property](#events-property)
+      - [activeClassName and idleClassName properties](#activeclassname-and-idleclassname-properties)
       - [Other properties](#other-properties)
   - [Migration](#migration)
-    - [`IdleMonitorRedux`](#idlemonitorredux)
-      - [`reduxActionPrefix`](#reduxactionprefix)
-      - [`dispatch`](#dispatch)
-    - [`IdleMonitorEvents`](#idlemonitorevents)
-      - [`onRun`](#onrun)
-      - [`onIdle`](#onidle)
-      - [`onActive`](#onactive)
-      - [`onStop`](#onstop)
+    - [IdleMonitorRedux](#idlemonitorredux)
+      - [reduxActionPrefix](#reduxactionprefix)
+      - [dispatch](#dispatch)
+    - [IdleMonitorEvents](#idlemonitorevents)
+      - [onRun](#onrun)
+      - [onIdle](#onidle)
+      - [onActive](#onactive)
+      - [onStop](#onstop)
 
 ## Installation
 
