@@ -3,6 +3,8 @@
 
 > Simple monitor of idle time for React
 
+> :warning: This package is no longer supported. Other packages with similar functionalities, such as [useIdle](https://github.com/streamich/react-use/blob/master/docs/useIdle.md), have larger communities which ensures better quality and testing.
+
 [![Build Status](https://travis-ci.org/Satyam/react-simple-idle-monitor.svg?branch=v1.0.0)](https://travis-ci.org/Satyam/react-simple-idle-monitor)
 
 Changes state to **idle** when a certain `timeout` is reached. Changes back to **active** when user interaction is detected.
@@ -39,31 +41,31 @@ The last two features were available in the core of the previous versions and ar
   - [Installation](#installation)
   - [Usage](#usage)
     - [Class names](#class-names)
-    - [useIdleMonitor hook.](#useidlemonitor-hook)
-      - [isIdle](#isidle)
-      - [isRunning](#isrunning)
-      - [timeout](#timeout)
-      - [startTime](#starttime)
-      - [className](#classname)
-      - [run](#run)
-      - [stop](#stop)
-      - [idle](#idle)
-      - [activate](#activate)
+    - [`useIdleMonitor` hook.](#useidlemonitor-hook)
+      - [`isIdle`](#isidle)
+      - [`isRunning`](#isrunning)
+      - [`timeout`](#timeout)
+      - [`startTime`](#starttime)
+      - [`className`](#classname)
+      - [`run`](#run)
+      - [`stop`](#stop)
+      - [`idle`](#idle)
+      - [`activate`](#activate)
     - [Properties](#properties)
-      - [disabled property](#disabled-property)
-      - [timeout property](#timeout-property)
-      - [events property](#events-property)
-      - [activeClassName and idleClassName properties](#activeclassname-and-idleclassname-properties)
+      - [`disabled` property](#disabled-property)
+      - [`timeout` property](#timeout-property)
+      - [`events` property](#events-property)
+      - [`activeClassName` and `idleClassName` properties](#activeclassname-and-idleclassname-properties)
       - [Other properties](#other-properties)
   - [Migration](#migration)
-    - [IdleMonitorRedux](#idlemonitorredux)
-      - [reduxActionPrefix](#reduxactionprefix)
-      - [dispatch](#dispatch)
-    - [IdleMonitorEvents](#idlemonitorevents)
-      - [onRun](#onrun)
-      - [onIdle](#onidle)
-      - [onActive](#onactive)
-      - [onStop](#onstop)
+    - [`IdleMonitorRedux`](#idlemonitorredux)
+      - [`reduxActionPrefix`](#reduxactionprefix)
+      - [`dispatch`](#dispatch)
+    - [`IdleMonitorEvents`](#idlemonitorevents)
+      - [`onRun`](#onrun)
+      - [`onIdle`](#onidle)
+      - [`onActive`](#onactive)
+      - [`onStop`](#onstop)
 
 ## Installation
 
